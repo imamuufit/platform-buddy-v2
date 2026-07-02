@@ -1,0 +1,11 @@
+{
+  "name": "Platform Buddy v2",
+  "short_name": "Buddy v2",
+  "description": "Mobile-first powerlifting training cockpit.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#08111f",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "icons": []
+}
