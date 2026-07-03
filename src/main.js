@@ -1,4 +1,4 @@
-import { readStorageValue, writeStorageValue } from "./storage.js";
+import { readStorageValue, STORAGE_KEYS, writeStorageValue } from "./storage.js";
 
 const screens = {
   home: {
@@ -72,14 +72,13 @@ const screens = {
 
 const app = document.querySelector("#app");
 const navItems = Array.from(document.querySelectorAll(".nav-item"));
-const storageKey = "platformBuddy.activeView";
 
 function isKnownView(viewName) {
   return Object.prototype.hasOwnProperty.call(screens, viewName);
 }
 
 function readStoredView() {
-  const storedView = readStorageValue(storageKey, "home");
+  const storedView = readStorageValue(STORAGE_KEYS.activeView, "home");
   return isKnownView(storedView) ? storedView : "home";
 }
 
@@ -88,7 +87,7 @@ function writeStoredView(viewName) {
     return;
   }
 
-  writeStorageValue(storageKey, viewName);
+  writeStorageValue(STORAGE_KEYS.activeView, viewName);
 }
 
 function renderHomeScreen(screen) {
