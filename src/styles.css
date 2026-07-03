@@ -57,7 +57,7 @@ h1 {
   line-height: 1;
 }
 
-.status-pill, .nav-item, .primary-card, .detail-card, .home-dashboard, .set-entry-card, .plan-card, .data-card {
+.status-pill, .nav-item, .primary-card, .detail-card, .home-dashboard, .set-entry-card, .plan-card, .data-card, .meet-card {
   border: 1px solid var(--line);
 }
 
@@ -76,13 +76,13 @@ h1 {
   gap: 12px;
 }
 
-.primary-card, .detail-card, .home-dashboard, .set-entry-card, .plan-card, .data-card {
+.primary-card, .detail-card, .home-dashboard, .set-entry-card, .plan-card, .data-card, .meet-card {
   border-radius: 22px;
   background: linear-gradient(180deg, var(--panel-strong), var(--panel));
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22);
 }
 
-.primary-card, .home-dashboard, .set-entry-card, .plan-card, .data-card { padding: 20px; }
+.primary-card, .home-dashboard, .set-entry-card, .plan-card, .data-card, .meet-card { padding: 20px; }
 .detail-card { padding: 16px; }
 
 .screen-label {
@@ -105,7 +105,7 @@ h1 {
   line-height: 1.65;
 }
 
-.home-dashboard, .home-hero, .set-entry-card, .plan-card, .data-card {
+.home-dashboard, .home-hero, .set-entry-card, .plan-card, .data-card, .meet-card {
   display: grid;
   gap: 14px;
 }
@@ -136,7 +136,7 @@ h1 {
   font-weight: 800;
 }
 
-.wellness-grid, .set-grid, .plan-stack, .signal-grid {
+.wellness-grid, .set-grid, .plan-stack, .signal-grid, .attempt-grid {
   display: grid;
   gap: 8px;
 }
@@ -149,17 +149,21 @@ h1 {
   grid-template-columns: repeat(2, 1fr);
 }
 
-.wellness-grid div, .set-grid label, .plan-main, .plan-stack div, .judgment-panel, .signal-grid div {
+.attempt-grid {
+  grid-template-columns: 1fr;
+}
+
+.wellness-grid div, .set-grid label, .plan-main, .plan-stack div, .judgment-panel, .signal-grid div, .meet-status, .attempt-grid div {
   border-radius: 14px;
   padding: 10px;
   background: rgba(255, 255, 255, 0.055);
 }
 
-.wellness-grid span, .wellness-grid strong, .set-grid span, .plan-main span, .plan-main strong, .plan-stack span, .plan-stack strong, .judgment-panel span, .judgment-panel strong, .signal-grid span, .signal-grid strong {
+.wellness-grid span, .wellness-grid strong, .set-grid span, .plan-main span, .plan-main strong, .plan-stack span, .plan-stack strong, .judgment-panel span, .judgment-panel strong, .signal-grid span, .signal-grid strong, .meet-status span, .meet-status strong, .attempt-grid span, .attempt-grid strong {
   display: block;
 }
 
-.wellness-grid span, .set-grid span, .plan-main span, .plan-stack span, .judgment-panel span, .signal-grid span {
+.wellness-grid span, .set-grid span, .plan-main span, .plan-stack span, .judgment-panel span, .signal-grid span, .meet-status span, .attempt-grid span {
   margin-bottom: 4px;
   color: var(--muted);
   font-size: 0.72rem;
@@ -181,13 +185,29 @@ h1 {
   outline: none;
 }
 
-.plan-main strong, .judgment-panel strong {
+.plan-main strong, .judgment-panel strong, .meet-status strong {
   font-size: 1.25rem;
 }
 
-.plan-stack strong, .signal-grid strong {
+.plan-stack strong, .signal-grid strong, .attempt-grid strong {
   font-size: 0.95rem;
   line-height: 1.35;
+}
+
+.checklist-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.checklist-row span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .action-row {
