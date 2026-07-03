@@ -217,6 +217,12 @@ h1 {
   outline: none;
 }
 
+[data-meet-attempt-field] {
+  min-height: 34px;
+  padding-top: 2px;
+  line-height: 1.35;
+}
+
 .plan-main strong, .judgment-panel strong, .meet-status strong, .e1rm-preview strong {
   font-size: 1.25rem;
 }
