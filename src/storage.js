@@ -1,5 +1,6 @@
 export const STORAGE_KEYS = {
-  activeView: "platformBuddy.activeView"
+  activeView: "platformBuddy.activeView",
+  logDraft: "platformBuddy.logDraft"
 };
 
 export function readStorageValue(key, fallbackValue) {

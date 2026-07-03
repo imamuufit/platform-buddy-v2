@@ -21,13 +21,13 @@ const screens = {
     title: "Record the next set",
     copy: "バーを置いたらすぐ残す。入力順はリフト、重量、回数、RPE、保存。メモは後で十分です。",
     fields: [
-      ["Lift", "Bench press"],
-      ["Weight", "120 kg"],
-      ["Reps", "5"],
-      ["RPE", "8"]
+      ["Lift", "Bench press", "lift"],
+      ["Weight", "120 kg", "weight"],
+      ["Reps", "5", "reps"],
+      ["RPE", "8", "rpe"]
     ],
-    action: "Save set",
-    memo: "Memo: bar path felt steady."
+    action: "Save draft",
+    memo: "Memo: draft stays on this device."
   },
   plan: {
     label: "PLAN",
@@ -72,6 +72,7 @@ const screens = {
 
 const app = document.querySelector("#app");
 const navItems = Array.from(document.querySelectorAll(".nav-item"));
+const logDraftDefaults = Object.fromEntries(screens.log.fields.map(([, value, key]) => [key, value]));
 
 function isKnownView(viewName) {
   return Object.prototype.hasOwnProperty.call(screens, viewName);
@@ -88,6 +89,54 @@ function writeStoredView(viewName) {
   }
 
   writeStorageValue(STORAGE_KEYS.activeView, viewName);
+}
+
+function escapeAttributeValue(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function readLogDraft() {
+  const storedDraft = readStorageValue(STORAGE_KEYS.logDraft, "{}");
+
+  try {
+    const parsedDraft = JSON.parse(storedDraft);
+    return { ...logDraftDefaults, ...parsedDraft };
+  } catch {
+    return { ...logDraftDefaults };
+  }
+}
+
+function writeLogDraft(draft) {
+  writeStorageValue(STORAGE_KEYS.logDraft, JSON.stringify(draft));
+}
+
+function collectLogDraft() {
+  const draft = { ...logDraftDefaults };
+  app.querySelectorAll("[data-log-field]").forEach((input) => {
+    draft[input.dataset.logField] = input.value;
+  });
+  return draft;
+}
+
+function bindLogDraftControls() {
+  const inputs = Array.from(app.querySelectorAll("[data-log-field]"));
+  const saveButton = app.querySelector("[data-log-save]");
+  const status = app.querySelector("[data-log-status]");
+
+  inputs.forEach((input) => {
+    input.addEventListener("input", () => writeLogDraft(collectLogDraft()));
+  });
+
+  saveButton?.addEventListener("click", () => {
+    writeLogDraft(collectLogDraft());
+    if (status) {
+      status.textContent = "Draft saved on this device.";
+    }
+  });
 }
 
 function renderHomeScreen(screen) {
@@ -133,6 +182,8 @@ function renderHomeScreen(screen) {
 }
 
 function renderSetEntryScreen(screen) {
+  const logDraft = readLogDraft();
+
   app.innerHTML = `
     <section class="set-entry-card" aria-labelledby="screen-title">
       <p class="screen-label">${screen.label}</p>
@@ -140,16 +191,21 @@ function renderSetEntryScreen(screen) {
       <p class="screen-copy">${screen.copy}</p>
       <div class="set-grid" aria-label="Set entry order">
         ${screen.fields
-          .map(([label, value]) => `<label><span>${label}</span><input value="${value}" readonly /></label>`)
+          .map(
+            ([label, , key]) =>
+              `<label><span>${label}</span><input value="${escapeAttributeValue(logDraft[key])}" data-log-field="${key}" /></label>`
+          )
           .join("")}
       </div>
-      <button class="save-action" type="button">${screen.action}</button>
+      <button class="save-action" type="button" data-log-save>${screen.action}</button>
     </section>
     <section class="detail-card" aria-label="Secondary memo">
       <h3>Memo</h3>
-      <p>${screen.memo}</p>
+      <p data-log-status>${screen.memo}</p>
     </section>
   `;
+
+  bindLogDraftControls();
 }
 
 function renderTrainingPlanScreen(screen) {
