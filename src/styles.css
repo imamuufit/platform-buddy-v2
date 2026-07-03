@@ -168,7 +168,7 @@ h1 {
   font-weight: 800;
 }
 
-.wellness-grid, .set-grid, .plan-stack, .signal-grid, .attempt-grid {
+.wellness-grid, .set-grid, .log-preview-grid, .plan-stack, .signal-grid, .attempt-grid {
   display: grid;
   gap: 8px;
 }
@@ -185,17 +185,17 @@ h1 {
   grid-template-columns: 1fr;
 }
 
-.wellness-grid div, .set-grid label, .plan-main, .plan-stack div, .judgment-panel, .signal-grid div, .meet-status, .attempt-grid div, .e1rm-preview {
+.wellness-grid div, .set-grid label, .plan-main, .plan-stack div, .judgment-panel, .signal-grid div, .meet-status, .attempt-grid div, .e1rm-preview, .rpe-helper {
   border-radius: 14px;
   padding: 10px;
   background: rgba(255, 255, 255, 0.055);
 }
 
-.wellness-grid span, .wellness-grid strong, .set-grid span, .plan-main span, .plan-main strong, .plan-stack span, .plan-stack strong, .judgment-panel span, .judgment-panel strong, .signal-grid span, .signal-grid strong, .meet-status span, .meet-status strong, .attempt-grid span, .attempt-grid strong, .e1rm-preview span, .e1rm-preview strong {
+.wellness-grid span, .wellness-grid strong, .set-grid span, .plan-main span, .plan-main strong, .plan-stack span, .plan-stack strong, .judgment-panel span, .judgment-panel strong, .signal-grid span, .signal-grid strong, .meet-status span, .meet-status strong, .attempt-grid span, .attempt-grid strong, .e1rm-preview span, .e1rm-preview strong, .rpe-helper span, .rpe-helper strong {
   display: block;
 }
 
-.wellness-grid span, .set-grid span, .plan-main span, .plan-stack span, .judgment-panel span, .signal-grid span, .meet-status span, .attempt-grid span, .e1rm-preview span {
+.wellness-grid span, .set-grid span, .plan-main span, .plan-stack span, .judgment-panel span, .signal-grid span, .meet-status span, .attempt-grid span, .e1rm-preview span, .rpe-helper span {
   margin-bottom: 4px;
   color: var(--muted);
   font-size: 0.72rem;
@@ -203,7 +203,7 @@ h1 {
 
 .wellness-grid strong { font-size: 0.86rem; }
 
-.set-grid {
+.set-grid, .log-preview-grid {
   grid-template-columns: repeat(2, 1fr);
 }
 
@@ -219,6 +219,11 @@ h1 {
 
 .plan-main strong, .judgment-panel strong, .meet-status strong, .e1rm-preview strong {
   font-size: 1.25rem;
+}
+
+.rpe-helper strong {
+  font-size: 0.95rem;
+  line-height: 1.35;
 }
 
 .plan-stack strong, .signal-grid strong, .attempt-grid strong {
