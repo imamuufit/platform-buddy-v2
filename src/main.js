@@ -40,10 +40,17 @@ const screens = {
   },
   data: {
     label: "DATA",
-    title: "グラフより先に、判断を出す。",
-    copy: "e1RM、RPE、疲労感、実行率から次の調整を見せる画面の土台です。今回のPRでは計算ロジックはまだ追加しません。",
-    primary: ["Judgment", "次の調整"],
-    secondary: ["Trend", "推移確認"]
+    title: "Training judgment",
+    copy: "グラフを見る前に、次の判断を確認します。ここでは静的な仮置きだけを表示し、計算やチャートはまだ追加しません。",
+    judgment: "Hold the load and clean up execution.",
+    signals: [
+      ["e1RM trend", "Flat"],
+      ["RPE drift", "Slightly high"],
+      ["Completion", "On track"],
+      ["Fatigue", "Manageable"]
+    ],
+    recommendation: "Next recommendation: repeat the prescription before increasing load.",
+    buddy: "Buddy note: A flat trend is not a failure. It is a request for cleaner reps."
   },
   meet: {
     label: "MEET",
@@ -146,6 +153,33 @@ function renderTrainingPlanScreen(screen) {
   `;
 }
 
+function renderDataScreen(screen) {
+  app.innerHTML = `
+    <section class="data-card" aria-labelledby="screen-title">
+      <p class="screen-label">${screen.label}</p>
+      <h2 id="screen-title" class="screen-title">${screen.title}</h2>
+      <p class="screen-copy">${screen.copy}</p>
+      <div class="judgment-panel" aria-label="Training judgment">
+        <span>Judgment</span>
+        <strong>${screen.judgment}</strong>
+      </div>
+      <div class="signal-grid" aria-label="Training signals">
+        ${screen.signals
+          .map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`)
+          .join("")}
+      </div>
+    </section>
+    <section class="detail-card" aria-label="Next recommendation">
+      <h3>Next recommendation</h3>
+      <p>${screen.recommendation}</p>
+    </section>
+    <section class="detail-card buddy-note" aria-label="Buddy note">
+      <h3>Buddy note</h3>
+      <p>${screen.buddy}</p>
+    </section>
+  `;
+}
+
 function renderPlaceholderScreen(screen) {
   app.innerHTML = `
     <section class="primary-card" aria-labelledby="screen-title">
@@ -179,6 +213,11 @@ function renderScreen(viewName) {
 
   if (viewName === "plan") {
     renderTrainingPlanScreen(screen);
+    return;
+  }
+
+  if (viewName === "data") {
+    renderDataScreen(screen);
     return;
   }
 
