@@ -99,6 +99,32 @@ function escapeAttributeValue(value) {
     .replace(/>/g, "&gt;");
 }
 
+function parsePositiveNumber(value) {
+  const parsed = Number.parseFloat(String(value).replace(/,/g, ""));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function estimateE1rm(draft) {
+  const weight = parsePositiveNumber(draft.weight);
+  const reps = parsePositiveNumber(draft.reps);
+
+  if (!weight || !reps || reps > 12) {
+    return null;
+  }
+
+  return Math.round(weight * (1 + reps / 30) * 2) / 2;
+}
+
+function formatE1rmPreview(draft) {
+  const e1rm = estimateE1rm(draft);
+
+  if (!e1rm) {
+    return "Enter weight and 1–12 reps.";
+  }
+
+  return `${e1rm} kg`;
+}
+
 function readLogDraft() {
   const storedDraft = readStorageValue(STORAGE_KEYS.logDraft, "{}");
 
@@ -122,13 +148,25 @@ function collectLogDraft() {
   return draft;
 }
 
+function updateE1rmPreview(draft) {
+  const previewValue = app.querySelector("[data-e1rm-preview]");
+
+  if (previewValue) {
+    previewValue.textContent = formatE1rmPreview(draft);
+  }
+}
+
 function bindLogDraftControls() {
   const inputs = Array.from(app.querySelectorAll("[data-log-field]"));
   const saveButton = app.querySelector("[data-log-save]");
   const status = app.querySelector("[data-log-status]");
 
   inputs.forEach((input) => {
-    input.addEventListener("input", () => writeLogDraft(collectLogDraft()));
+    input.addEventListener("input", () => {
+      const draft = collectLogDraft();
+      writeLogDraft(draft);
+      updateE1rmPreview(draft);
+    });
   });
 
   saveButton?.addEventListener("click", () => {
@@ -196,6 +234,10 @@ function renderSetEntryScreen(screen) {
               `<label><span>${label}</span><input value="${escapeAttributeValue(logDraft[key])}" data-log-field="${key}" /></label>`
           )
           .join("")}
+      </div>
+      <div class="e1rm-preview" aria-label="Estimated one rep max">
+        <span>Estimated 1RM</span>
+        <strong data-e1rm-preview>${formatE1rmPreview(logDraft)}</strong>
       </div>
       <button class="save-action" type="button" data-log-save>${screen.action}</button>
     </section>

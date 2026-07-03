@@ -185,17 +185,17 @@ h1 {
   grid-template-columns: 1fr;
 }
 
-.wellness-grid div, .set-grid label, .plan-main, .plan-stack div, .judgment-panel, .signal-grid div, .meet-status, .attempt-grid div {
+.wellness-grid div, .set-grid label, .plan-main, .plan-stack div, .judgment-panel, .signal-grid div, .meet-status, .attempt-grid div, .e1rm-preview {
   border-radius: 14px;
   padding: 10px;
   background: rgba(255, 255, 255, 0.055);
 }
 
-.wellness-grid span, .wellness-grid strong, .set-grid span, .plan-main span, .plan-main strong, .plan-stack span, .plan-stack strong, .judgment-panel span, .judgment-panel strong, .signal-grid span, .signal-grid strong, .meet-status span, .meet-status strong, .attempt-grid span, .attempt-grid strong {
+.wellness-grid span, .wellness-grid strong, .set-grid span, .plan-main span, .plan-main strong, .plan-stack span, .plan-stack strong, .judgment-panel span, .judgment-panel strong, .signal-grid span, .signal-grid strong, .meet-status span, .meet-status strong, .attempt-grid span, .attempt-grid strong, .e1rm-preview span, .e1rm-preview strong {
   display: block;
 }
 
-.wellness-grid span, .set-grid span, .plan-main span, .plan-stack span, .judgment-panel span, .signal-grid span, .meet-status span, .attempt-grid span {
+.wellness-grid span, .set-grid span, .plan-main span, .plan-stack span, .judgment-panel span, .signal-grid span, .meet-status span, .attempt-grid span, .e1rm-preview span {
   margin-bottom: 4px;
   color: var(--muted);
   font-size: 0.72rem;
@@ -217,7 +217,7 @@ h1 {
   outline: none;
 }
 
-.plan-main strong, .judgment-panel strong, .meet-status strong {
+.plan-main strong, .judgment-panel strong, .meet-status strong, .e1rm-preview strong {
   font-size: 1.25rem;
 }
 
