@@ -223,6 +223,11 @@ h1 {
   line-height: 1.35;
 }
 
+[data-meet-attempt-field]:focus-visible {
+  border-radius: 10px;
+  background: rgba(125, 211, 252, 0.1);
+}
+
 .plan-main strong, .judgment-panel strong, .meet-status strong, .e1rm-preview strong {
   font-size: 1.25rem;
 }
