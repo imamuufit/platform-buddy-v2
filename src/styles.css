@@ -57,7 +57,7 @@ h1 {
   line-height: 1;
 }
 
-.status-pill, .nav-item, .primary-card, .detail-card, .home-dashboard {
+.status-pill, .nav-item, .primary-card, .detail-card, .home-dashboard, .set-entry-card {
   border: 1px solid var(--line);
 }
 
@@ -76,13 +76,13 @@ h1 {
   gap: 12px;
 }
 
-.primary-card, .detail-card, .home-dashboard {
+.primary-card, .detail-card, .home-dashboard, .set-entry-card {
   border-radius: 22px;
   background: linear-gradient(180deg, var(--panel-strong), var(--panel));
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22);
 }
 
-.primary-card, .home-dashboard { padding: 20px; }
+.primary-card, .home-dashboard, .set-entry-card { padding: 20px; }
 .detail-card { padding: 16px; }
 
 .screen-label {
@@ -105,9 +105,12 @@ h1 {
   line-height: 1.65;
 }
 
-.home-dashboard, .home-hero { display: grid; gap: 14px; }
+.home-dashboard, .home-hero, .set-entry-card {
+  display: grid;
+  gap: 14px;
+}
 
-.primary-action {
+.primary-action, .save-action {
   width: 100%;
   min-height: 48px;
   border: 1px solid rgba(125, 211, 252, 0.48);
@@ -133,27 +136,46 @@ h1 {
   font-weight: 800;
 }
 
-.wellness-grid {
+.wellness-grid, .set-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
-.wellness-grid div {
+.wellness-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.wellness-grid div, .set-grid label {
   border-radius: 14px;
   padding: 10px;
   background: rgba(255, 255, 255, 0.055);
 }
 
-.wellness-grid span, .wellness-grid strong { display: block; }
+.wellness-grid span, .wellness-grid strong, .set-grid span {
+  display: block;
+}
 
-.wellness-grid span {
+.wellness-grid span, .set-grid span {
   margin-bottom: 4px;
   color: var(--muted);
   font-size: 0.72rem;
 }
 
 .wellness-grid strong { font-size: 0.86rem; }
+
+.set-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.set-grid input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 800;
+  outline: none;
+}
 
 .action-row {
   display: grid;
@@ -222,7 +244,7 @@ h1 {
   border-color: rgba(125, 211, 252, 0.45);
 }
 
-.nav-item:focus-visible, .primary-action:focus-visible {
+.nav-item:focus-visible, .primary-action:focus-visible, .save-action:focus-visible {
   outline: 3px solid rgba(125, 211, 252, 0.55);
   outline-offset: 2px;
 }
