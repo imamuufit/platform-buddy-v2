@@ -274,7 +274,9 @@ h1 {
 
 .save-status {
   margin-top: 10px;
+  color: var(--muted);
   font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .checklist-row {
