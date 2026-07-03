@@ -125,6 +125,32 @@ function formatE1rmPreview(draft) {
   return `${e1rm} kg`;
 }
 
+function formatRpeHelper(draft) {
+  const rpe = parsePositiveNumber(draft.rpe);
+
+  if (!rpe || rpe < 1 || rpe > 10) {
+    return "Enter RPE 1–10.";
+  }
+
+  if (rpe <= 6) {
+    return "Very easy: keep technique tight.";
+  }
+
+  if (rpe <= 7.5) {
+    return "Controlled: likely room to build.";
+  }
+
+  if (rpe <= 8.5) {
+    return "Working range: stay crisp.";
+  }
+
+  if (rpe <= 9.5) {
+    return "Heavy: protect the next set.";
+  }
+
+  return "Limit effort: stop before form breaks.";
+}
+
 function readLogDraft() {
   const storedDraft = readStorageValue(STORAGE_KEYS.logDraft, "{}");
 
@@ -148,11 +174,16 @@ function collectLogDraft() {
   return draft;
 }
 
-function updateE1rmPreview(draft) {
-  const previewValue = app.querySelector("[data-e1rm-preview]");
+function updateLogPreviews(draft) {
+  const e1rmPreview = app.querySelector("[data-e1rm-preview]");
+  const rpeHelper = app.querySelector("[data-rpe-helper]");
 
-  if (previewValue) {
-    previewValue.textContent = formatE1rmPreview(draft);
+  if (e1rmPreview) {
+    e1rmPreview.textContent = formatE1rmPreview(draft);
+  }
+
+  if (rpeHelper) {
+    rpeHelper.textContent = formatRpeHelper(draft);
   }
 }
 
@@ -165,7 +196,7 @@ function bindLogDraftControls() {
     input.addEventListener("input", () => {
       const draft = collectLogDraft();
       writeLogDraft(draft);
-      updateE1rmPreview(draft);
+      updateLogPreviews(draft);
     });
   });
 
@@ -235,9 +266,15 @@ function renderSetEntryScreen(screen) {
           )
           .join("")}
       </div>
-      <div class="e1rm-preview" aria-label="Estimated one rep max">
-        <span>Estimated 1RM</span>
-        <strong data-e1rm-preview>${formatE1rmPreview(logDraft)}</strong>
+      <div class="log-preview-grid" aria-label="Set preview helpers">
+        <div class="e1rm-preview" aria-label="Estimated one rep max">
+          <span>Estimated 1RM</span>
+          <strong data-e1rm-preview>${formatE1rmPreview(logDraft)}</strong>
+        </div>
+        <div class="rpe-helper" aria-label="RPE helper">
+          <span>RPE helper</span>
+          <strong data-rpe-helper>${formatRpeHelper(logDraft)}</strong>
+        </div>
       </div>
       <button class="save-action" type="button" data-log-save>${screen.action}</button>
     </section>
