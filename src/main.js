@@ -16,10 +16,16 @@ const screens = {
   },
   log: {
     label: "LOG",
-    title: "紙より速く、セットを残す。",
-    copy: "重量、回数、RPE、メモを最短で記録する画面の土台です。今回のPRでは入力ロジックはまだ追加しません。",
-    primary: ["Set", "重量・回数"],
-    secondary: ["RPE", "主観強度"]
+    title: "Record the next set",
+    copy: "バーを置いたらすぐ残す。入力順はリフト、重量、回数、RPE、保存。メモは後で十分です。",
+    fields: [
+      ["Lift", "Bench press"],
+      ["Weight", "120 kg"],
+      ["Reps", "5"],
+      ["RPE", "8"]
+    ],
+    action: "Save set",
+    memo: "Memo: bar path felt steady."
   },
   plan: {
     label: "PLAN",
@@ -89,6 +95,26 @@ function renderHomeScreen(screen) {
   `;
 }
 
+function renderSetEntryScreen(screen) {
+  app.innerHTML = `
+    <section class="set-entry-card" aria-labelledby="screen-title">
+      <p class="screen-label">${screen.label}</p>
+      <h2 id="screen-title" class="screen-title">${screen.title}</h2>
+      <p class="screen-copy">${screen.copy}</p>
+      <div class="set-grid" aria-label="Set entry order">
+        ${screen.fields
+          .map(([label, value]) => `<label><span>${label}</span><input value="${value}" readonly /></label>`)
+          .join("")}
+      </div>
+      <button class="save-action" type="button">${screen.action}</button>
+    </section>
+    <section class="detail-card" aria-label="Secondary memo">
+      <h3>Memo</h3>
+      <p>${screen.memo}</p>
+    </section>
+  `;
+}
+
 function renderPlaceholderScreen(screen) {
   app.innerHTML = `
     <section class="primary-card" aria-labelledby="screen-title">
@@ -112,6 +138,11 @@ function renderScreen(viewName) {
 
   if (viewName === "home") {
     renderHomeScreen(screen);
+    return;
+  }
+
+  if (viewName === "log") {
+    renderSetEntryScreen(screen);
     return;
   }
 
