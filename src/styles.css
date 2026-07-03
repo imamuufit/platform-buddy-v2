@@ -57,12 +57,31 @@ h1 {
   line-height: 1;
 }
 
-.status-pill, .nav-item, .primary-card, .detail-card, .home-dashboard, .set-entry-card, .plan-card, .data-card, .meet-card {
+.status-pill, .nav-item, .primary-card, .detail-card, .home-dashboard, .set-entry-card, .plan-card, .data-card, .meet-card, .app-mark {
   border: 1px solid var(--line);
 }
 
-.status-pill {
+.mode-cluster {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(125, 211, 252, 0.22), rgba(255, 255, 255, 0.055));
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.status-pill {
   border-radius: 999px;
   padding: 7px 10px;
   background: var(--accent-soft);
