@@ -1,3 +1,5 @@
+import { readStorageValue, writeStorageValue } from "./storage.js";
+
 const screens = {
   home: {
     label: "HOME",
@@ -77,12 +79,8 @@ function isKnownView(viewName) {
 }
 
 function readStoredView() {
-  try {
-    const storedView = window.localStorage.getItem(storageKey);
-    return isKnownView(storedView) ? storedView : "home";
-  } catch {
-    return "home";
-  }
+  const storedView = readStorageValue(storageKey, "home");
+  return isKnownView(storedView) ? storedView : "home";
 }
 
 function writeStoredView(viewName) {
@@ -90,11 +88,7 @@ function writeStoredView(viewName) {
     return;
   }
 
-  try {
-    window.localStorage.setItem(storageKey, viewName);
-  } catch {
-    // Keep navigation usable when storage is unavailable.
-  }
+  writeStorageValue(storageKey, viewName);
 }
 
 function renderHomeScreen(screen) {
