@@ -364,3 +364,7 @@ h1 {
   outline: 3px solid rgba(125, 211, 252, 0.55);
   outline-offset: 2px;
 }
+
+@media (min-width: 700px) {
+  .app-shell { padding-top: 28px; }
+}
