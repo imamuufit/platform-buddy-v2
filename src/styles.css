@@ -69,16 +69,29 @@ h1 {
 }
 
 .app-mark {
+  position: relative;
   display: grid;
   place-items: center;
   width: 34px;
   height: 34px;
   border-radius: 50%;
   background: linear-gradient(180deg, rgba(125, 211, 252, 0.22), rgba(255, 255, 255, 0.055));
-  color: var(--accent);
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.04em;
+}
+
+.buddy-orbit {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(125, 211, 252, 0.72);
+  border-radius: 50%;
+}
+
+.buddy-core {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 16px rgba(125, 211, 252, 0.5);
 }
 
 .status-pill {
