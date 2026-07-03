@@ -66,9 +66,9 @@ const screens = {
     copy: "試合の日に迷わないための静的チェック画面です。試技計算や日付ロジックはまだ追加しません。",
     status: "Meet date not set",
     attempts: [
-      ["Squat", "Opener not set"],
-      ["Bench", "Opener not set"],
-      ["Deadlift", "Opener not set"]
+      ["Squat", "Opener not set", "squat"],
+      ["Bench", "Opener not set", "bench"],
+      ["Deadlift", "Opener not set", "deadlift"]
     ],
     checks: ["Rack height", "Equipment", "Weigh-in", "Warm-up timing"],
     readiness: ["Weigh-in", "Rack heights", "Warm-up plan", "Openers", "Commands"],
@@ -80,6 +80,7 @@ const screens = {
 const app = document.querySelector("#app");
 const navItems = Array.from(document.querySelectorAll(".nav-item"));
 const logDraftDefaults = Object.fromEntries(screens.log.fields.map(([, value, key]) => [key, value]));
+const meetAttemptDraftDefaults = Object.fromEntries(screens.meet.attempts.map(([, value, key]) => [key, value]));
 
 function isKnownView(viewName) {
   return Object.prototype.hasOwnProperty.call(screens, viewName);
@@ -218,6 +219,48 @@ function bindLogDraftControls() {
     writeLogDraft(collectLogDraft());
     if (status) {
       status.textContent = "Draft saved on this device.";
+    }
+  });
+}
+
+function readMeetAttemptDraft() {
+  const storedDraft = readStorageValue(STORAGE_KEYS.meetAttemptDraft, "{}");
+
+  try {
+    const parsedDraft = JSON.parse(storedDraft);
+    return { ...meetAttemptDraftDefaults, ...parsedDraft };
+  } catch {
+    return { ...meetAttemptDraftDefaults };
+  }
+}
+
+function writeMeetAttemptDraft(draft) {
+  writeStorageValue(STORAGE_KEYS.meetAttemptDraft, JSON.stringify(draft));
+}
+
+function collectMeetAttemptDraft() {
+  const draft = { ...meetAttemptDraftDefaults };
+  app.querySelectorAll("[data-meet-attempt-field]").forEach((input) => {
+    draft[input.dataset.meetAttemptField] = input.value;
+  });
+  return draft;
+}
+
+function bindMeetAttemptDraftControls() {
+  const inputs = Array.from(app.querySelectorAll("[data-meet-attempt-field]"));
+  const saveButton = app.querySelector("[data-meet-attempt-save]");
+  const status = app.querySelector("[data-meet-attempt-status]");
+
+  inputs.forEach((input) => {
+    input.addEventListener("input", () => {
+      writeMeetAttemptDraft(collectMeetAttemptDraft());
+    });
+  });
+
+  saveButton?.addEventListener("click", () => {
+    writeMeetAttemptDraft(collectMeetAttemptDraft());
+    if (status) {
+      status.textContent = "Attempt draft saved on this device.";
     }
   });
 }
@@ -386,6 +429,7 @@ function renderDataScreen(screen) {
 }
 
 function renderMeetScreen(screen) {
+  const meetAttemptDraft = readMeetAttemptDraft();
   const meetMemo = readMeetMemo();
 
   app.innerHTML = `
@@ -399,7 +443,7 @@ function renderMeetScreen(screen) {
       </div>
       <div class="attempt-grid" aria-label="Attempt placeholders">
         ${screen.attempts
-          .map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`)
+          .map(([label, , key]) => `<div><span>${label}</span><strong>${escapeTextContent(meetAttemptDraft[key])}</strong></div>`)
           .join("")}
       </div>
     </section>
@@ -414,6 +458,19 @@ function renderMeetScreen(screen) {
       <ol class="readiness-list">
         ${MEET_ATTEMPT_NOTES.map((item) => `<li>${item}</li>`).join("")}
       </ol>
+    </section>
+    <section class="detail-card" aria-label="Attempt draft">
+      <h3>Attempt draft</h3>
+      <div class="set-grid" aria-label="Saved attempt draft">
+        ${screen.attempts
+          .map(
+            ([label, , key]) =>
+              `<label><span>${label}</span><input value="${escapeAttributeValue(meetAttemptDraft[key])}" data-meet-attempt-field="${key}" /></label>`
+          )
+          .join("")}
+      </div>
+      <button class="save-action" type="button" data-meet-attempt-save>Save attempt draft</button>
+      <p class="save-status" data-meet-attempt-status>Attempt draft stays on this device.</p>
     </section>
     <section class="detail-card" aria-label="Meet memo">
       <h3>Meet memo</h3>
@@ -437,6 +494,7 @@ function renderMeetScreen(screen) {
     </section>
   `;
 
+  bindMeetAttemptDraftControls();
   bindMeetMemoControls();
 }
 
