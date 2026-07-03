@@ -231,6 +231,21 @@ h1 {
   line-height: 1.35;
 }
 
+.readiness-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--muted);
+}
+
+.readiness-list li {
+  padding-left: 2px;
+  line-height: 1.45;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
 .checklist-row {
   display: flex;
   flex-wrap: wrap;

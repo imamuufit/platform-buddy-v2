@@ -70,6 +70,7 @@ const screens = {
       ["Deadlift", "Opener not set"]
     ],
     checks: ["Rack height", "Equipment", "Weigh-in", "Warm-up timing"],
+    readiness: ["Weigh-in", "Rack heights", "Warm-up plan", "Openers", "Commands"],
     rules: "White lights first: commands, depth, pause, lockout, and control before load selection.",
     buddy: "Buddy note: The first attempt is not a statement. It is an entry ticket."
   }
@@ -366,6 +367,12 @@ function renderMeetScreen(screen) {
           .map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`)
           .join("")}
       </div>
+    </section>
+    <section class="detail-card" aria-label="Meet readiness order">
+      <h3>Readiness order</h3>
+      <ol class="readiness-list">
+        ${screen.readiness.map((item) => `<li>${item}</li>`).join("")}
+      </ol>
     </section>
     <section class="detail-card" aria-label="Meet checklist">
       <h3>Checklist</h3>
