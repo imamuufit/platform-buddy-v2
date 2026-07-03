@@ -57,7 +57,7 @@ h1 {
   line-height: 1;
 }
 
-.status-pill, .nav-item, .primary-card, .detail-card, .home-dashboard, .set-entry-card {
+.status-pill, .nav-item, .primary-card, .detail-card, .home-dashboard, .set-entry-card, .plan-card {
   border: 1px solid var(--line);
 }
 
@@ -76,13 +76,13 @@ h1 {
   gap: 12px;
 }
 
-.primary-card, .detail-card, .home-dashboard, .set-entry-card {
+.primary-card, .detail-card, .home-dashboard, .set-entry-card, .plan-card {
   border-radius: 22px;
   background: linear-gradient(180deg, var(--panel-strong), var(--panel));
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22);
 }
 
-.primary-card, .home-dashboard, .set-entry-card { padding: 20px; }
+.primary-card, .home-dashboard, .set-entry-card, .plan-card { padding: 20px; }
 .detail-card { padding: 16px; }
 
 .screen-label {
@@ -105,7 +105,7 @@ h1 {
   line-height: 1.65;
 }
 
-.home-dashboard, .home-hero, .set-entry-card {
+.home-dashboard, .home-hero, .set-entry-card, .plan-card {
   display: grid;
   gap: 14px;
 }
@@ -136,7 +136,7 @@ h1 {
   font-weight: 800;
 }
 
-.wellness-grid, .set-grid {
+.wellness-grid, .set-grid, .plan-stack {
   display: grid;
   gap: 8px;
 }
@@ -145,17 +145,17 @@ h1 {
   grid-template-columns: repeat(3, 1fr);
 }
 
-.wellness-grid div, .set-grid label {
+.wellness-grid div, .set-grid label, .plan-main, .plan-stack div {
   border-radius: 14px;
   padding: 10px;
   background: rgba(255, 255, 255, 0.055);
 }
 
-.wellness-grid span, .wellness-grid strong, .set-grid span {
+.wellness-grid span, .wellness-grid strong, .set-grid span, .plan-main span, .plan-main strong, .plan-stack span, .plan-stack strong {
   display: block;
 }
 
-.wellness-grid span, .set-grid span {
+.wellness-grid span, .set-grid span, .plan-main span, .plan-stack span {
   margin-bottom: 4px;
   color: var(--muted);
   font-size: 0.72rem;
@@ -175,6 +175,15 @@ h1 {
   font-size: 1.05rem;
   font-weight: 800;
   outline: none;
+}
+
+.plan-main strong {
+  font-size: 1.25rem;
+}
+
+.plan-stack strong {
+  font-size: 0.95rem;
+  line-height: 1.35;
 }
 
 .action-row {
