@@ -37,6 +37,11 @@ const screens = {
     topSet: "Top set: 120 kg × 5 @ RPE 8",
     backoff: "Backoff: 105 kg × 5 × 3",
     target: "Target: crisp reps, stable pause",
+    cycle: [
+      ["Cycle", "Base block"],
+      ["Week", "1 / 4"],
+      ["Intent", "Accumulate clean volume"]
+    ],
     rule: "Adjustment rule: if warm-ups feel heavy, keep the top set conservative.",
     buddy: "Buddy note: Do not negotiate with the bar before the first work set."
   },
@@ -301,6 +306,11 @@ function renderTrainingPlanScreen(screen) {
         <div><span>Top set</span><strong>${screen.topSet}</strong></div>
         <div><span>Backoff</span><strong>${screen.backoff}</strong></div>
         <div><span>Target</span><strong>${screen.target}</strong></div>
+      </div>
+      <div class="cycle-grid" aria-label="Training cycle status">
+        ${screen.cycle
+          .map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`)
+          .join("")}
       </div>
     </section>
     <section class="detail-card" aria-label="Adjustment rule">
