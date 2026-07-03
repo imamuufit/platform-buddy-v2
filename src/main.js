@@ -106,6 +106,13 @@ function escapeAttributeValue(value) {
     .replace(/>/g, "&gt;");
 }
 
+function escapeTextContent(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function parsePositiveNumber(value) {
   const parsed = Number.parseFloat(String(value).replace(/,/g, ""));
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
@@ -211,6 +218,31 @@ function bindLogDraftControls() {
     writeLogDraft(collectLogDraft());
     if (status) {
       status.textContent = "Draft saved on this device.";
+    }
+  });
+}
+
+function readMeetMemo() {
+  return readStorageValue(STORAGE_KEYS.meetMemo, "");
+}
+
+function writeMeetMemo(memo) {
+  writeStorageValue(STORAGE_KEYS.meetMemo, memo);
+}
+
+function bindMeetMemoControls() {
+  const input = app.querySelector("[data-meet-memo]");
+  const saveButton = app.querySelector("[data-meet-memo-save]");
+  const status = app.querySelector("[data-meet-memo-status]");
+
+  input?.addEventListener("input", () => {
+    writeMeetMemo(input.value);
+  });
+
+  saveButton?.addEventListener("click", () => {
+    writeMeetMemo(input?.value ?? "");
+    if (status) {
+      status.textContent = "Meet memo saved on this device.";
     }
   });
 }
@@ -354,6 +386,8 @@ function renderDataScreen(screen) {
 }
 
 function renderMeetScreen(screen) {
+  const meetMemo = readMeetMemo();
+
   app.innerHTML = `
     <section class="meet-card" aria-labelledby="screen-title">
       <p class="screen-label">${screen.label}</p>
@@ -381,6 +415,12 @@ function renderMeetScreen(screen) {
         ${MEET_ATTEMPT_NOTES.map((item) => `<li>${item}</li>`).join("")}
       </ol>
     </section>
+    <section class="detail-card" aria-label="Meet memo">
+      <h3>Meet memo</h3>
+      <textarea class="meet-memo-box" data-meet-memo placeholder="Rack heights, commands, opener thoughts">${escapeTextContent(meetMemo)}</textarea>
+      <button class="save-action" type="button" data-meet-memo-save>Save meet memo</button>
+      <p class="save-status" data-meet-memo-status>Memo stays on this device.</p>
+    </section>
     <section class="detail-card" aria-label="Meet checklist">
       <h3>Checklist</h3>
       <div class="checklist-row">
@@ -396,6 +436,8 @@ function renderMeetScreen(screen) {
       <p>${screen.buddy}</p>
     </section>
   `;
+
+  bindMeetMemoControls();
 }
 
 function renderPlaceholderScreen(screen) {
