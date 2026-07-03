@@ -29,10 +29,14 @@ const screens = {
   },
   plan: {
     label: "PLAN",
-    title: "今日の処方を先に見る。",
-    copy: "スクワット、ベンチ、デッドリフトの予定を確認する画面の土台です。詳細設定よりも今日の実行を優先します。",
-    primary: ["Main", "主運動"],
-    secondary: ["Backoff", "補助セット"]
+    title: "Today's prescription",
+    copy: "設定より先に、今日やる内容を確認します。数値は静的な仮置きで、処方ロジックはまだ追加しません。",
+    mainLift: "Bench press",
+    topSet: "Top set: 120 kg × 5 @ RPE 8",
+    backoff: "Backoff: 105 kg × 5 × 3",
+    target: "Target: crisp reps, stable pause",
+    rule: "Adjustment rule: if warm-ups feel heavy, keep the top set conservative.",
+    buddy: "Buddy note: Do not negotiate with the bar before the first work set."
   },
   data: {
     label: "DATA",
@@ -115,6 +119,33 @@ function renderSetEntryScreen(screen) {
   `;
 }
 
+function renderTrainingPlanScreen(screen) {
+  app.innerHTML = `
+    <section class="plan-card" aria-labelledby="screen-title">
+      <p class="screen-label">${screen.label}</p>
+      <h2 id="screen-title" class="screen-title">${screen.title}</h2>
+      <p class="screen-copy">${screen.copy}</p>
+      <div class="plan-main" aria-label="Today's main work">
+        <span>Main lift</span>
+        <strong>${screen.mainLift}</strong>
+      </div>
+      <div class="plan-stack" aria-label="Today's work prescription">
+        <div><span>Top set</span><strong>${screen.topSet}</strong></div>
+        <div><span>Backoff</span><strong>${screen.backoff}</strong></div>
+        <div><span>Target</span><strong>${screen.target}</strong></div>
+      </div>
+    </section>
+    <section class="detail-card" aria-label="Adjustment rule">
+      <h3>Adjustment rule</h3>
+      <p>${screen.rule}</p>
+    </section>
+    <section class="detail-card buddy-note" aria-label="Buddy note">
+      <h3>Buddy note</h3>
+      <p>${screen.buddy}</p>
+    </section>
+  `;
+}
+
 function renderPlaceholderScreen(screen) {
   app.innerHTML = `
     <section class="primary-card" aria-labelledby="screen-title">
@@ -143,6 +174,11 @@ function renderScreen(viewName) {
 
   if (viewName === "log") {
     renderSetEntryScreen(screen);
+    return;
+  }
+
+  if (viewName === "plan") {
+    renderTrainingPlanScreen(screen);
     return;
   }
 
