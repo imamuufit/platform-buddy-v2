@@ -91,6 +91,14 @@ function writeStoredView(viewName) {
   writeStorageValue(STORAGE_KEYS.activeView, viewName);
 }
 
+function escapeAttributeValue(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function readLogDraft() {
   const storedDraft = readStorageValue(STORAGE_KEYS.logDraft, "{}");
 
@@ -185,7 +193,7 @@ function renderSetEntryScreen(screen) {
         ${screen.fields
           .map(
             ([label, , key]) =>
-              `<label><span>${label}</span><input value="${logDraft[key]}" data-log-field="${key}" /></label>`
+              `<label><span>${label}</span><input value="${escapeAttributeValue(logDraft[key])}" data-log-field="${key}" /></label>`
           )
           .join("")}
       </div>
