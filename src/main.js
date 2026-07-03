@@ -1,3 +1,4 @@
+import { MEET_ATTEMPT_NOTES } from "./meet-attempt-notes.js";
 import { readStorageValue, STORAGE_KEYS, writeStorageValue } from "./storage.js";
 
 const screens = {
@@ -372,6 +373,12 @@ function renderMeetScreen(screen) {
       <h3>Readiness order</h3>
       <ol class="readiness-list">
         ${screen.readiness.map((item) => `<li>${item}</li>`).join("")}
+      </ol>
+    </section>
+    <section class="detail-card" aria-label="Attempt notes">
+      <h3>Attempt notes</h3>
+      <ol class="readiness-list">
+        ${MEET_ATTEMPT_NOTES.map((item) => `<li>${item}</li>`).join("")}
       </ol>
     </section>
     <section class="detail-card" aria-label="Meet checklist">
