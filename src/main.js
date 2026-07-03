@@ -54,10 +54,17 @@ const screens = {
   },
   meet: {
     label: "MEET",
-    title: "試合の日に迷わない準備。",
-    copy: "試技順、白判定、申告重量、持ち物、当日の流れをまとめる画面の土台です。学習コンテンツより実戦準備を優先します。",
-    primary: ["Attempts", "試技準備"],
-    secondary: ["Rules", "白判定確認"]
+    title: "Meet day cockpit",
+    copy: "試合の日に迷わないための静的チェック画面です。試技計算や日付ロジックはまだ追加しません。",
+    status: "Meet date not set",
+    attempts: [
+      ["Squat", "Opener not set"],
+      ["Bench", "Opener not set"],
+      ["Deadlift", "Opener not set"]
+    ],
+    checks: ["Rack height", "Equipment", "Weigh-in", "Warm-up timing"],
+    rules: "White lights first: commands, depth, pause, lockout, and control before load selection.",
+    buddy: "Buddy note: The first attempt is not a statement. It is an entry ticket."
   }
 };
 
@@ -180,6 +187,39 @@ function renderDataScreen(screen) {
   `;
 }
 
+function renderMeetScreen(screen) {
+  app.innerHTML = `
+    <section class="meet-card" aria-labelledby="screen-title">
+      <p class="screen-label">${screen.label}</p>
+      <h2 id="screen-title" class="screen-title">${screen.title}</h2>
+      <p class="screen-copy">${screen.copy}</p>
+      <div class="meet-status" aria-label="Meet status">
+        <span>Status</span>
+        <strong>${screen.status}</strong>
+      </div>
+      <div class="attempt-grid" aria-label="Attempt placeholders">
+        ${screen.attempts
+          .map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`)
+          .join("")}
+      </div>
+    </section>
+    <section class="detail-card" aria-label="Meet checklist">
+      <h3>Checklist</h3>
+      <div class="checklist-row">
+        ${screen.checks.map((item) => `<span>${item}</span>`).join("")}
+      </div>
+    </section>
+    <section class="detail-card" aria-label="White light rules">
+      <h3>White light focus</h3>
+      <p>${screen.rules}</p>
+    </section>
+    <section class="detail-card buddy-note" aria-label="Buddy note">
+      <h3>Buddy note</h3>
+      <p>${screen.buddy}</p>
+    </section>
+  `;
+}
+
 function renderPlaceholderScreen(screen) {
   app.innerHTML = `
     <section class="primary-card" aria-labelledby="screen-title">
@@ -218,6 +258,11 @@ function renderScreen(viewName) {
 
   if (viewName === "data") {
     renderDataScreen(screen);
+    return;
+  }
+
+  if (viewName === "meet") {
+    renderMeetScreen(screen);
     return;
   }
 
