@@ -70,6 +70,32 @@ const screens = {
 
 const app = document.querySelector("#app");
 const navItems = Array.from(document.querySelectorAll(".nav-item"));
+const storageKey = "platformBuddy.activeView";
+
+function isKnownView(viewName) {
+  return Object.prototype.hasOwnProperty.call(screens, viewName);
+}
+
+function readStoredView() {
+  try {
+    const storedView = window.localStorage.getItem(storageKey);
+    return isKnownView(storedView) ? storedView : "home";
+  } catch {
+    return "home";
+  }
+}
+
+function writeStoredView(viewName) {
+  if (!isKnownView(viewName)) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(storageKey, viewName);
+  } catch {
+    // Keep navigation usable when storage is unavailable.
+  }
+}
 
 function renderHomeScreen(screen) {
   app.innerHTML = `
@@ -282,12 +308,17 @@ function setActiveNav(viewName) {
 }
 
 function navigate(viewName) {
+  if (!isKnownView(viewName)) {
+    return;
+  }
+
   renderScreen(viewName);
   setActiveNav(viewName);
+  writeStoredView(viewName);
 }
 
 navItems.forEach((item) => {
   item.addEventListener("click", () => navigate(item.dataset.view));
 });
 
-renderScreen("home");
+navigate(readStoredView());
