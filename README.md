@@ -18,6 +18,12 @@ This repository intentionally excludes VBT, video analysis, camera features, mot
 
 The Shiba Buddy may appear only as a quiet spotter: small, calm, and secondary to training decisions.
 
+## PLAN scope
+
+PLAN should stay focused on the next prescribed work: main lift, top set, backoff work, cycle context, and one conservative adjustment rule.
+
+Do not expand PLAN into program generation, excessive dashboards, video review, or gamified coaching loops.
+
 ## Current status
 
 Initial product charter and Codex agent rules are being established before app implementation.
