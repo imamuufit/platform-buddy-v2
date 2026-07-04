@@ -482,7 +482,7 @@ function renderMeetScreen(screen) {
         ${screen.attempts
           .map(
             ([label, , key]) =>
-              `<label><span>${label}</span><input value="${escapeAttributeValue(meetAttemptDraft[key])}" data-meet-attempt-field="${key}" /></label>`
+              `<label><span>${label}</span><input value="${escapeAttributeValue(meetAttemptDraft[key])}" autocomplete="off" autocapitalize="off" spellcheck="false" data-meet-attempt-field="${key}" /></label>`
           )
           .join("")}
       </div>
@@ -517,7 +517,7 @@ function renderMeetScreen(screen) {
 
 function renderPlaceholderScreen(screen) {
   app.innerHTML = `
-    <section class="primary-card" aria-labelledby="screen-title">
+      <section class="primary-card" aria-labelledby="screen-title">
       <p class="screen-label">${screen.label}</p>
       <h2 id="screen-title" class="screen-title">${screen.title}</h2>
       <p class="screen-copy">${screen.copy}</p>
