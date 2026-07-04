@@ -482,7 +482,7 @@ function renderMeetScreen(screen) {
         ${screen.attempts
           .map(
             ([label, , key]) =>
-              `<label><span>${label}</span><input value="${escapeAttributeValue(meetAttemptDraft[key])}" autocomplete="off" autocapitalize="off" spellcheck="false" data-meet-attempt-field="${key}" /></label>`
+              `<label><span>${label}</span><input value="${escapeAttributeValue(meetAttemptDraft[key])}" inputmode="decimal" autocomplete="off" autocapitalize="off" spellcheck="false" data-meet-attempt-field="${key}" /></label>`
           )
           .join("")}
       </div>
