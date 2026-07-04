@@ -8,5 +8,6 @@ export const MEET_ATTEMPT_NOTES = [
   "Check the platform clock before submitting the next attempt.",
   "Watch the next lifter order before changing the plan.",
   "Confirm collars and plates before the platform handoff.",
+  "Confirm coach position before the platform call.",
   "Call thirds only after second-attempt feedback."
 ];
