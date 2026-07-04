@@ -5,5 +5,6 @@ export const MEET_ATTEMPT_NOTES = [
   "Set warm-up timing before the flight starts.",
   "Keep second attempts conservative.",
   "Record attempt result before choosing the next call.",
+  "Check the platform clock before submitting the next attempt.",
   "Call thirds only after second-attempt feedback."
 ];
