@@ -114,6 +114,16 @@ function escapeTextContent(value) {
     .replace(/>/g, "&gt;");
 }
 
+function getLogInputAttributes(key) {
+  const baseAttributes = 'autocomplete="off" autocapitalize="off" spellcheck="false"';
+
+  if (["weight", "reps", "rpe"].includes(key)) {
+    return `inputmode="decimal" ${baseAttributes}`;
+  }
+
+  return baseAttributes;
+}
+
 function parsePositiveNumber(value) {
   const parsed = Number.parseFloat(String(value).replace(/,/g, ""));
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
@@ -358,7 +368,7 @@ function renderSetEntryScreen(screen) {
         ${screen.fields
           .map(
             ([label, , key]) =>
-              `<label><span>${label}</span><input value="${escapeAttributeValue(logDraft[key])}" data-log-field="${key}" /></label>`
+              `<label><span>${label}</span><input value="${escapeAttributeValue(logDraft[key])}" ${getLogInputAttributes(key)} data-log-field="${key}" /></label>`
           )
           .join("")}
       </div>
