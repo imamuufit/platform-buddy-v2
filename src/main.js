@@ -246,6 +246,12 @@ function collectMeetAttemptDraft() {
   return draft;
 }
 
+function updateMeetAttemptSummary(draft) {
+  app.querySelectorAll("[data-meet-attempt-summary]").forEach((summary) => {
+    summary.textContent = draft[summary.dataset.meetAttemptSummary] ?? "";
+  });
+}
+
 function bindMeetAttemptDraftControls() {
   const inputs = Array.from(app.querySelectorAll("[data-meet-attempt-field]"));
   const saveButton = app.querySelector("[data-meet-attempt-save]");
@@ -253,7 +259,9 @@ function bindMeetAttemptDraftControls() {
 
   inputs.forEach((input) => {
     input.addEventListener("input", () => {
-      writeMeetAttemptDraft(collectMeetAttemptDraft());
+      const draft = collectMeetAttemptDraft();
+      writeMeetAttemptDraft(draft);
+      updateMeetAttemptSummary(draft);
       if (status) {
         status.textContent = "Attempt draft updated locally.";
       }
@@ -449,7 +457,10 @@ function renderMeetScreen(screen) {
       </div>
       <div class="attempt-grid" aria-label="Attempt placeholders">
         ${screen.attempts
-          .map(([label, , key]) => `<div><span>${label}</span><strong>${escapeTextContent(meetAttemptDraft[key])}</strong></div>`)
+          .map(
+            ([label, , key]) =>
+              `<div><span>${label}</span><strong data-meet-attempt-summary="${key}">${escapeTextContent(meetAttemptDraft[key])}</strong></div>`
+          )
           .join("")}
       </div>
     </section>
