@@ -9,5 +9,6 @@ export const MEET_ATTEMPT_NOTES = [
   "Watch the next lifter order before changing the plan.",
   "Confirm collars and plates before the platform handoff.",
   "Confirm coach position before the platform call.",
+  "Confirm attempt card matches the next call before submission.",
   "Call thirds only after second-attempt feedback."
 ];
