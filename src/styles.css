@@ -273,6 +273,10 @@ h1 {
   line-height: 1.5;
 }
 
+.meet-memo-box:focus-visible {
+  background: rgba(125, 211, 252, 0.1);
+}
+
 .meet-memo-box::placeholder {
   color: var(--muted);
 }
