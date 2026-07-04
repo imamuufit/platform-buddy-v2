@@ -283,6 +283,9 @@ function bindMeetMemoControls() {
 
   input?.addEventListener("input", () => {
     writeMeetMemo(input.value);
+    if (status) {
+      status.textContent = "Meet memo updated locally.";
+    }
   });
 
   saveButton?.addEventListener("click", () => {
