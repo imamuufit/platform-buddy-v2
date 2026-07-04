@@ -254,6 +254,9 @@ function bindMeetAttemptDraftControls() {
   inputs.forEach((input) => {
     input.addEventListener("input", () => {
       writeMeetAttemptDraft(collectMeetAttemptDraft());
+      if (status) {
+        status.textContent = "Attempt draft updated locally.";
+      }
     });
   });
 
