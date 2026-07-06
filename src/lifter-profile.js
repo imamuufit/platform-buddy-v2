@@ -1,5 +1,14 @@
 import { formatKg, liftLabel } from "./buddy-method.js";
-import { readArrayStorage, readJsonStorage, STORAGE_KEYS, writeJsonStorage } from "./storage.js";
+import { readJsonStorage, STORAGE_KEYS, writeJsonStorage } from "./storage.js";
+import {
+  latestLog,
+  nextTrainingFromLogs,
+  readLogs,
+  recommendationForLog,
+  suggestedValuesForSegment,
+  workSegmentsForItem,
+  workTypeLabel
+} from "./training-log.js";
 
 const PROFILE_VERSION = 1;
 
@@ -138,7 +147,7 @@ export function renderLifterProfileHome({ settings, program }) {
   const profile = readLifterProfile();
   const isRegistered = hasRequiredProfile(profile);
   const shouldShowForm = !isRegistered || editingProfile;
-  const logs = readArrayStorage(STORAGE_KEYS.trainingLogs, []);
+  const logs = readLogs();
   const nextTraining = nextTrainingFromLogs(program, logs);
 
   if (shouldShowForm) {
@@ -147,6 +156,8 @@ export function renderLifterProfileHome({ settings, program }) {
         title: "あなたをリフターとして登録します。",
         copy: "初回HOMEで競技者プロフィールを作成し、登録候補協会と公式確認リンクをひと目で見える状態にします。"
       })}
+      ${renderTodayTraining(nextTraining, settings)}
+      ${renderLastLog(logs)}
       ${renderProfileForm(profile, isRegistered)}
       ${renderOfficialLinks()}
       ${renderBuddyNote("所属協会を確認すると、大会への道筋が見えます。最終判断は必ずJPA公式案内と所属先で確認してください。")}
@@ -158,9 +169,10 @@ export function renderLifterProfileHome({ settings, program }) {
       title: "今日の練習は、試技台につながっています。",
       copy: "HOMEは練習の司令塔であり、競技者としての現在地を確認する画面です。"
     })}
-    ${renderLifterCard(profile)}
     ${renderTodayTraining(nextTraining, settings)}
     ${renderLastLog(logs)}
+    ${renderHomeJudgment(logs)}
+    ${renderLifterCard(profile)}
     ${renderOfficialLinks()}
     ${renderNextStep(profile)}
     ${renderBuddyNote("ルールを知ることは、白判定を増やすことです。強くなる準備と、試合に出る準備を同じ画面で整えます。")}
@@ -197,6 +209,26 @@ export function bindLifterProfileHome(app, { onNavigate, onRefresh }) {
   app.querySelector("[data-cancel-profile-edit]")?.addEventListener("click", () => {
     editingProfile = false;
     onRefresh();
+  });
+
+  app.querySelector("[data-send-to-log]")?.addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    writeJsonStorage(STORAGE_KEYS.logDraft, {
+      date: today(),
+      week: Number(button.dataset.week || 1),
+      day: Number(button.dataset.day || 1),
+      itemIndex: Number(button.dataset.itemIndex || 0),
+      workType: String(button.dataset.workType || "top"),
+      weight: String(button.dataset.weight || ""),
+      reps: String(button.dataset.reps || ""),
+      sets: String(button.dataset.sets || ""),
+      rpe: String(button.dataset.rpe || ""),
+      rir: "",
+      formQuality: "steady",
+      fatigue: "normal",
+      memo: ""
+    });
+    onNavigate("log");
   });
 
   app.querySelector("[data-open-log]")?.addEventListener("click", () => onNavigate("log"));
@@ -389,27 +421,79 @@ function renderLifterCard(profile) {
 }
 
 function renderTodayTraining(nextTraining, settings) {
+  if (nextTraining.isComplete) {
+    return `
+      <section class="detail-card today-training-card" aria-label="Today training">
+        <div class="section-heading">
+          <span>Today Training</span>
+          <strong>プログラム完了</strong>
+        </div>
+        <p>最終Week / DayまでLOGが保存されています。次のサイクルへ進む前にDATAで疲労とe1RMを確認してください。</p>
+        <button class="primary-action" type="button" data-open-plan>PLANを再生成</button>
+      </section>
+    `;
+  }
+
+  const segments = workSegmentsForItem(nextTraining.mainItem);
+  const topSegment = segments.find((segment) => segment.workType === "top") || segments[0];
+  const backoffSegment = segments.find((segment) => segment.workType === "backoff");
+  const suggested = suggestedValuesForSegment(topSegment);
+
   return `
     <section class="detail-card today-training-card" aria-label="Today training">
       <div class="section-heading">
         <span>Today Training</span>
         <strong>Week ${nextTraining.week} / Day ${nextTraining.day}</strong>
       </div>
+      <div class="home-training-summary">
+        <article>
+          <span>メイン種目</span>
+          <strong>${escapeText(liftLabel(nextTraining.mainItem?.lift))}</strong>
+        </article>
+        <article>
+          <span>Day</span>
+          <strong>${escapeText(nextTraining.dayTitle)}</strong>
+        </article>
+      </div>
       <div class="work-row main-work">
         <div>
-          <span>${escapeText(liftLabel(nextTraining.mainItem?.lift))}</span>
-          <strong>${escapeText(nextTraining.mainItem?.prescription?.title || nextTraining.dayTitle)}</strong>
+          <span>${escapeText(workTypeLabel(topSegment.workType))}</span>
+          <strong>${escapeText(topSegment.title || nextTraining.dayTitle)}</strong>
         </div>
         <dl>
-          <div><dt>%1RM</dt><dd>${escapeText(nextTraining.mainItem?.prescription?.percent || "-")}</dd></div>
-          <div><dt>set</dt><dd>${escapeText(nextTraining.mainItem?.prescription?.sets || "-")}</dd></div>
-          <div><dt>rep</dt><dd>${escapeText(nextTraining.mainItem?.prescription?.reps || "-")}</dd></div>
-          <div><dt>RPE</dt><dd>${escapeText(nextTraining.mainItem?.prescription?.rpe || "-")}</dd></div>
+          <div><dt>%1RM</dt><dd>${escapeText(topSegment.percent || "-")}</dd></div>
+          <div><dt>set</dt><dd>${escapeText(topSegment.sets || "-")}</dd></div>
+          <div><dt>rep</dt><dd>${escapeText(topSegment.reps || "-")}</dd></div>
+          <div><dt>RPE</dt><dd>${escapeText(topSegment.rpe || "-")}</dd></div>
         </dl>
-        <p>${escapeText(nextTraining.mainItem?.prescription?.note || "PLANで今日の内容を確認してください。")}</p>
+      </div>
+      ${backoffSegment ? `
+        <div class="work-row accessory-work">
+          <div>
+            <span>${escapeText(workTypeLabel(backoffSegment.workType))}</span>
+            <strong>${escapeText(backoffSegment.title)}</strong>
+          </div>
+          <p>トップセット保存後、LOGでバックオフも別記録として保存できます。</p>
+        </div>
+      ` : ""}
+      <div class="attention-list">
+        <strong>今日の注意点</strong>
+        <p>${escapeText(topSegment.note || nextTraining.weekNote || "予定RPEとフォーム再現性を優先してください。")}</p>
       </div>
       <p class="panel-note">現在1RM: ${escapeText(currentMaxSummary(settings))}</p>
-      <button class="primary-action" type="button" data-open-log>LOGへ進む</button>
+      <button
+        class="primary-action"
+        type="button"
+        data-send-to-log
+        data-week="${escapeAttribute(nextTraining.week)}"
+        data-day="${escapeAttribute(nextTraining.day)}"
+        data-item-index="${escapeAttribute(nextTraining.itemIndex)}"
+        data-work-type="${escapeAttribute(topSegment.workType)}"
+        data-weight="${escapeAttribute(suggested.weight)}"
+        data-reps="${escapeAttribute(suggested.reps)}"
+        data-sets="${escapeAttribute(suggested.sets)}"
+        data-rpe="${escapeAttribute(suggested.rpe)}"
+      >この予定をLOGに送る</button>
     </section>
   `;
 }
@@ -435,6 +519,21 @@ function renderLastLog(logs) {
         <strong>${escapeText(lastLog.date || "日付未設定")} / ${escapeText(liftLabel(lastLog.lift))}</strong>
       </div>
       <p>${escapeText(logSummary(lastLog))}</p>
+    </section>
+  `;
+}
+
+function renderHomeJudgment(logs) {
+  const lastLog = latestLog(logs);
+  const recommendation = recommendationForLog(lastLog);
+
+  return `
+    <section class="detail-card next-judgment-card" aria-label="Next judgment">
+      <div class="section-heading">
+        <span>次回判断</span>
+        <strong>${escapeText(recommendation.label)}</strong>
+      </div>
+      <p>${escapeText(recommendation.note)}</p>
     </section>
   `;
 }
@@ -507,40 +606,6 @@ function renderFederationNote(profile) {
   `;
 }
 
-function nextTrainingFromLogs(program, logs) {
-  const fallback = trainingAt(program, 1, 1);
-  const lastLog = latestLog(logs);
-  if (!lastLog?.plan?.week || !lastLog?.plan?.day) return fallback;
-
-  const lastWeek = Number(lastLog.plan.week);
-  const lastDay = Number(lastLog.plan.day);
-  const week = program.weeks[lastWeek - 1];
-  if (!week) return fallback;
-
-  if (lastDay < week.days.length) return trainingAt(program, lastWeek, lastDay + 1);
-  if (lastWeek < program.weeks.length) return trainingAt(program, lastWeek + 1, 1);
-  return trainingAt(program, lastWeek, lastDay);
-}
-
-function trainingAt(program, weekNumber, dayNumber) {
-  const week = program.weeks[weekNumber - 1] || program.weeks[0];
-  const day = week?.days[dayNumber - 1] || week?.days[0];
-  const mainItem = day?.items?.find((item) => item.type === "main") || day?.items?.[0];
-
-  return {
-    week: week?.week || 1,
-    day: dayNumber,
-    dayTitle: day?.title || "PLAN未生成",
-    mainItem
-  };
-}
-
-function latestLog(logs) {
-  return [...logs]
-    .filter((log) => log && typeof log === "object")
-    .sort((a, b) => String(b.createdAt || b.date || "").localeCompare(String(a.createdAt || a.date || "")))[0];
-}
-
 function associationCandidates(profile) {
   const sourcePairs = [
     ["現住所", profile.residencePrefecture],
@@ -572,6 +637,7 @@ function currentMaxSummary(settings) {
 function logSummary(log) {
   const pieces = [
     log.plan?.week && log.plan?.day ? `Week ${log.plan.week} / Day ${log.plan.day}` : "",
+    log.workType ? workTypeLabel(log.workType) : "",
     log.weight ? `${formatKg(log.weight)}kg` : "",
     log.reps ? `${log.reps}rep` : "",
     log.sets ? `${log.sets}set` : "",
@@ -625,4 +691,10 @@ function escapeText(value) {
 
 function escapeAttribute(value) {
   return escapeText(value).replace(/"/g, "&quot;");
+}
+
+function today() {
+  const now = new Date();
+  const localTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return localTime.toISOString().slice(0, 10);
 }
