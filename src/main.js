@@ -10,6 +10,7 @@ import {
   normalizeBuddySettings
 } from "./buddy-method.js";
 import { readJsonStorage, readStorageValue, STORAGE_KEYS, writeJsonStorage, writeStorageValue } from "./storage.js";
+import { renderTrainingLog } from "./training-log.js";
 
 const app = document.querySelector("#app");
 const navItems = Array.from(document.querySelectorAll(".nav-item"));
@@ -120,24 +121,7 @@ function renderPlan() {
 }
 
 function renderLog() {
-  const settings = readSettings();
-  const program = generateBuddyProgram(settings);
-  const today = program.weeks[0]?.days[0];
-
-  app.innerHTML = `
-    <section class="hero-panel" aria-labelledby="screen-title">
-      <p class="screen-label">LOG</p>
-      <h2 id="screen-title" class="screen-title">今日の実施メモ</h2>
-      <p class="screen-copy">このMVPではPLAN生成を優先しています。LOG本格保存は次の作業範囲です。</p>
-    </section>
-    <section class="detail-card">
-      <div class="section-heading">
-        <span>今日見るカード</span>
-        <strong>${escapeText(today?.title || "PLAN")}</strong>
-      </div>
-      <p>セット記録は未移植です。まずPLANで重量、回数、補助量を確認して使います。</p>
-    </section>
-  `;
+  renderTrainingLog({ app, settings: readSettings() });
 }
 
 function renderData() {

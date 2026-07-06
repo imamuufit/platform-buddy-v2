@@ -3,7 +3,8 @@ export const STORAGE_KEYS = {
   logDraft: "platformBuddy.logDraft",
   meetMemo: "platformBuddy.meetMemo",
   meetAttemptDraft: "platformBuddy.meetAttemptDraft",
-  buddyMethodSettings: "platformBuddy.buddyMethodSettings"
+  buddyMethodSettings: "platformBuddy.buddyMethodSettings",
+  trainingLogs: "platformBuddy.trainingLogs"
 };
 
 export function readStorageValue(key, fallbackValue) {
@@ -46,6 +47,20 @@ export function writeJsonStorage(key, value) {
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch {
     // Keep the app usable when localStorage is unavailable.
+  }
+}
+
+export function readArrayStorage(key, fallbackValue = []) {
+  const fallbackClone = structuredCloneSafe(fallbackValue);
+
+  try {
+    const storedValue = window.localStorage.getItem(key);
+    if (!storedValue) return fallbackClone;
+
+    const parsedValue = JSON.parse(storedValue);
+    return Array.isArray(parsedValue) ? parsedValue : fallbackClone;
+  } catch {
+    return fallbackClone;
   }
 }
 
