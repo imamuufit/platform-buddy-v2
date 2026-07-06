@@ -10,6 +10,7 @@ import {
   normalizeBuddySettings
 } from "./buddy-method.js";
 import { readJsonStorage, readStorageValue, STORAGE_KEYS, writeJsonStorage, writeStorageValue } from "./storage.js";
+import { bindLifterProfileHome, renderLifterProfileHome } from "./lifter-profile.js";
 import { renderTrainingLog } from "./training-log.js";
 
 const app = document.querySelector("#app");
@@ -56,48 +57,12 @@ function escapeAttribute(value) {
 function renderHome() {
   const settings = readSettings();
   const program = generateBuddyProgram(settings);
-  const nextDay = program.weeks[0]?.days[0];
-  const firstLift = activeLiftIds(settings)[0];
-  const firstProjection = program.projections[firstLift];
 
-  app.innerHTML = `
-    <section class="hero-panel" aria-labelledby="screen-title">
-      <p class="screen-label">HOME</p>
-      <h2 id="screen-title" class="screen-title">今日のトレーニングを決める</h2>
-      <p class="screen-copy">旧Platform BuddyのBuddy Method設定から、スマホで読めるPWA用プランを生成します。</p>
-      <button class="primary-action" type="button" data-open-plan>PLANを開く</button>
-    </section>
-
-    <section class="summary-grid" aria-label="Saved program summary">
-      ${summaryCard("対象", program.summary.targetLabel)}
-      ${summaryCard("期間", program.summary.lengthLabel)}
-      ${summaryCard("頻度", program.summary.frequencyLabel)}
-      ${summaryCard("補助", program.summary.accessoryLabel)}
-    </section>
-
-    <section class="detail-card" aria-label="Today suggestion">
-      <div class="section-heading">
-        <span>Today</span>
-        <strong>${escapeText(nextDay?.title || "PLAN未生成")}</strong>
-      </div>
-      <p>${escapeText(nextDay ? `${program.weeks[0].phase.name}: ${program.weeks[0].note}` : "PLANで設定を保存してください。")}</p>
-    </section>
-
-    <section class="detail-card" aria-label="Recent strength signal">
-      <div class="section-heading">
-        <span>最終週の目安</span>
-        <strong>${escapeText(firstProjection?.label || "-")}</strong>
-      </div>
-      <p>${escapeText(liftLabel(firstLift))}の現在1RM ${formatKg(settings.maxes[firstLift])}kg からの到達候補です。命令ではなく、最終週の挑戦目安として扱います。</p>
-    </section>
-
-    <section class="buddy-note" aria-label="Buddy note">
-      <span>Buddy note</span>
-      <p>今日はまずPLANを確認。軽ければ少し足すより、予定RPEで白判定の形を残します。</p>
-    </section>
-  `;
-
-  app.querySelector("[data-open-plan]")?.addEventListener("click", () => navigate("plan"));
+  app.innerHTML = renderLifterProfileHome({ settings, program });
+  bindLifterProfileHome(app, {
+    onNavigate: navigate,
+    onRefresh: renderHome
+  });
 }
 
 function renderPlan() {
