@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Platform Buddy v2</title>
+  <desc id="desc">A calm powerlifting platform mark.</desc>
+  <rect width="512" height="512" rx="96" fill="#10100f"/>
+  <rect x="92" y="168" width="328" height="48" rx="20" fill="#d7b56d"/>
+  <rect x="132" y="216" width="248" height="128" rx="28" fill="#202522"/>
+  <path d="M176 296h160" stroke="#72d6bd" stroke-width="26" stroke-linecap="round"/>
+  <circle cx="176" cy="296" r="42" fill="none" stroke="#72d6bd" stroke-width="18"/>
+  <circle cx="336" cy="296" r="42" fill="none" stroke="#72d6bd" stroke-width="18"/>
+  <path d="M188 376h136" stroke="#f4f0e8" stroke-width="22" stroke-linecap="round"/>
+</svg>
