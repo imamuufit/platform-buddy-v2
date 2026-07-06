@@ -11,7 +11,16 @@ import {
 } from "./buddy-method.js";
 import { readJsonStorage, readStorageValue, STORAGE_KEYS, writeJsonStorage, writeStorageValue } from "./storage.js";
 import { bindLifterProfileHome, renderLifterProfileHome } from "./lifter-profile.js";
-import { renderTrainingLog } from "./training-log.js";
+import {
+  FATIGUE_LABELS,
+  FORM_QUALITY_LABELS,
+  latestLog,
+  nextTrainingFromLogs,
+  readLogs,
+  recommendationForLog,
+  renderTrainingLog,
+  workTypeLabel
+} from "./training-log.js";
 
 const app = document.querySelector("#app");
 const navItems = Array.from(document.querySelectorAll(".nav-item"));
@@ -68,21 +77,26 @@ function renderHome() {
 function renderPlan() {
   const settings = readSettings();
   const program = generateBuddyProgram(settings);
+  const logs = readLogs();
+  const nextTraining = nextTrainingFromLogs(program, logs);
+  const focusWeek = nextTraining.isComplete ? program.weeks.length : nextTraining.week;
 
   app.innerHTML = `
     <section class="hero-panel" aria-labelledby="screen-title">
       <p class="screen-label">PLAN</p>
       <h2 id="screen-title" class="screen-title">Buddy Method プラン生成</h2>
-      <p class="screen-copy">対象、週数、頻度、補助量、現在1RMを入れると、Week / Dayカードでプログラムを生成します。</p>
+      <p class="screen-copy">スマホでは次に行うDayを中心に表示します。全体はWeekを開いて確認できます。</p>
     </section>
 
     ${renderSettingsForm(settings)}
     ${renderProgramSummary(program)}
     ${renderPredictionPanel(program)}
-    ${renderWeekList(program)}
+    ${renderPlanFocus(program, nextTraining, focusWeek)}
+    ${renderWeekList(program, focusWeek)}
   `;
 
   bindSettingsForm(settings);
+  bindPlanNavigation(focusWeek);
 }
 
 function renderLog() {
@@ -92,22 +106,22 @@ function renderLog() {
 function renderData() {
   const settings = readSettings();
   const program = generateBuddyProgram(settings);
+  const logs = readLogs();
 
   app.innerHTML = `
     <section class="hero-panel" aria-labelledby="screen-title">
       <p class="screen-label">DATA</p>
-      <h2 id="screen-title" class="screen-title">現在1RMと到達候補</h2>
-      <p class="screen-copy">複雑なグラフではなく、今の設定から見える強度目安だけを表示します。</p>
+      <h2 id="screen-title" class="screen-title">LOGから次回重量を判断</h2>
+      <p class="screen-copy">複雑なグラフより、直近e1RM、RPE、疲労、フォームから次回の保守的な判断を表示します。</p>
     </section>
-    <section class="metric-list" aria-label="Projected PR list">
-      ${program.lifts.map((lift) => metricRow(liftLabel(lift), `${formatKg(settings.maxes[lift])}kg`, program.projections[lift].label)).join("")}
-    </section>
+    ${renderDataSummary(logs)}
+    ${renderLogAnalysis(program, logs)}
     <section class="detail-card">
       <div class="section-heading">
-        <span>判断</span>
-        <strong>保守的に進める</strong>
+        <span>到達候補</span>
+        <strong>PLAN設定からの目安</strong>
       </div>
-      <p>予測PRは到達候補です。今日のRPEが高い場合は重量を足さず、次回へ良い反復を残します。</p>
+      <p>${program.lifts.map((lift) => `${liftLabel(lift)} ${program.projections[lift].label}`).join(" / ")}</p>
     </section>
   `;
 }
@@ -247,25 +261,127 @@ function renderPredictionPanel(program) {
   `;
 }
 
-function renderWeekList(program) {
+function renderPlanFocus(program, nextTraining, focusWeek) {
+  const nextWeek = Math.min(program.weeks.length, Math.max(1, focusWeek + 1));
+  const finalWeek = program.weeks.length;
+
+  return `
+    <section class="plan-focus-card" aria-label="Plan focus">
+      <div class="section-heading">
+        <span>今見るところ</span>
+        <strong>${nextTraining.isComplete ? "プログラム完了" : `Week ${nextTraining.week} / Day ${nextTraining.day}`}</strong>
+      </div>
+      <p>${escapeText(nextTraining.isComplete ? "最終Dayまで保存済みです。DATAを確認して次のPLANを再生成してください。" : nextTraining.dayTitle)}</p>
+      <div class="plan-jump-grid">
+        <button type="button" data-plan-jump="${escapeAttribute(focusWeek)}">今週</button>
+        <button type="button" data-plan-jump="${escapeAttribute(nextWeek)}">次週</button>
+        <button type="button" data-plan-jump="${escapeAttribute(finalWeek)}">最終週</button>
+      </div>
+    </section>
+  `;
+}
+
+function renderWeekList(program, focusWeek) {
   return `
     <section class="week-list" aria-label="Generated weekly plan" data-week-list>
       ${program.weeks.map((week) => `
-        <article class="week-card" data-week-card="${week.week}">
-          <header class="week-header">
+        <details class="week-card" data-week-card="${week.week}" ${week.week === focusWeek ? "open" : ""}>
+          <summary class="week-header">
             <div>
               <span>Week ${week.week}</span>
               <strong>${escapeText(week.phase.name)}</strong>
             </div>
             <p>${escapeText(week.phase.tone)}</p>
-          </header>
+          </summary>
           <p class="week-note">${escapeText(week.note)}</p>
           <div class="day-list">
             ${week.days.map((day, index) => renderDayCard(day, index + 1)).join("")}
           </div>
-        </article>
+        </details>
       `).join("")}
     </section>
+  `;
+}
+
+function renderDataSummary(logs) {
+  const lastLog = latestLog(logs);
+  if (!lastLog) {
+    return `
+      <section class="detail-card data-empty-card">
+        <div class="section-heading">
+          <span>保存LOG</span>
+          <strong>まだ分析待ち</strong>
+        </div>
+        <p>HOMEから今日の予定をLOGへ送り、トップセットを保存するとDATAに直近e1RMと次回判断が出ます。</p>
+      </section>
+    `;
+  }
+
+  const recommendation = recommendationForLog(lastLog);
+  return `
+    <section class="detail-card data-summary-card">
+      <div class="section-heading">
+        <span>直近LOG</span>
+        <strong>${escapeText(liftLabel(lastLog.lift))} / ${escapeText(recommendation.label)}</strong>
+      </div>
+      <p>${escapeText(logLine(lastLog))}</p>
+      <p>${escapeText(recommendation.note)}</p>
+    </section>
+  `;
+}
+
+function renderLogAnalysis(program, logs) {
+  const liftCards = program.lifts.map((lift) => renderLiftAnalysisCard(lift, logs)).join("");
+
+  return `
+    <section class="data-card-grid metric-list" aria-label="Saved log analysis">
+      ${liftCards}
+    </section>
+  `;
+}
+
+function renderLiftAnalysisCard(lift, logs) {
+  const liftLogs = logs.filter((log) => log.lift === lift && log.workType !== "accessory");
+  const latest = latestLog(liftLogs);
+
+  if (!latest) {
+    return `
+      <article class="data-card">
+        <div class="section-heading">
+          <span>${escapeText(liftLabel(lift))}</span>
+          <strong>LOG待ち</strong>
+        </div>
+        <p>この種目のトップセットを保存すると、直近e1RMと次回重量判断が表示されます。</p>
+      </article>
+    `;
+  }
+
+  const previous = liftLogs.filter((log) => log.id !== latest.id && log.e1rm).sort((a, b) => `${b.date}${b.createdAt}`.localeCompare(`${a.date}${a.createdAt}`))[0];
+  const e1rmDiff = previous?.e1rm ? latest.e1rm - previous.e1rm : 0;
+  const recommendation = recommendationForLog(latest);
+  const recent = liftLogs.slice(0, 3);
+  const rpeAverage = recent.length
+    ? Math.round((recent.reduce((sum, log) => sum + Number(log.rpe || 0), 0) / recent.length) * 10) / 10
+    : latest.rpe;
+
+  return `
+    <article class="data-card">
+      <div class="section-heading">
+        <span>${escapeText(liftLabel(lift))}</span>
+        <strong>${escapeText(formatKg(latest.e1rm))}kg e1RM</strong>
+      </div>
+      <dl class="data-metrics">
+        <div><dt>前回比</dt><dd>${escapeText(diffText(e1rmDiff))}</dd></div>
+        <div><dt>RPE傾向</dt><dd>${escapeText(`平均 ${rpeAverage}`)}</dd></div>
+        <div><dt>疲労感</dt><dd>${escapeText(FATIGUE_LABELS[latest.fatigue] || latest.fatigue)}</dd></div>
+        <div><dt>フォーム</dt><dd>${escapeText(FORM_QUALITY_LABELS[latest.formQuality] || latest.formQuality)}</dd></div>
+      </dl>
+      <div class="recommendation-pill ${escapeAttribute(`is-${recommendation.tone}`)}">
+        <span>次回重量判断</span>
+        <strong>${escapeText(recommendation.label)}</strong>
+      </div>
+      <p>${escapeText(logLine(latest))}</p>
+    </article>
   `;
 }
 
@@ -353,6 +469,19 @@ function bindSettingsForm(currentSettings) {
   });
 }
 
+function bindPlanNavigation(focusWeek) {
+  app.querySelectorAll("[data-plan-jump]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const weekNumber = Number(button.dataset.planJump || focusWeek);
+      const card = app.querySelector(`[data-week-card="${weekNumber}"]`);
+      if (!card) return;
+
+      card.setAttribute("open", "");
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
 function settingsFromForm(form, previousSettings) {
   const formData = new FormData(form);
   const target = String(formData.get("target") || previousSettings.target);
@@ -423,6 +552,25 @@ function metricRow(label, max, projection) {
       <p>到達候補 ${escapeText(projection)}</p>
     </article>
   `;
+}
+
+function logLine(log) {
+  const pieces = [
+    log.plan?.week && log.plan?.day ? `Week ${log.plan.week} / Day ${log.plan.day}` : "",
+    log.workType ? workTypeLabel(log.workType) : "",
+    log.weight ? `${formatKg(log.weight)}kg` : "",
+    log.reps ? `${log.reps}rep` : "",
+    log.sets ? `${log.sets}set` : "",
+    log.rpe ? `RPE ${log.rpe}` : ""
+  ].filter(Boolean);
+
+  return pieces.join(" / ") || "保存LOGを確認してください。";
+}
+
+function diffText(value) {
+  if (!value) return "比較待ち";
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${formatKg(value)}kg`;
 }
 
 function rangeText(low, high) {
