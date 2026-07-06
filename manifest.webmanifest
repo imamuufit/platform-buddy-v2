@@ -3,9 +3,17 @@
   "short_name": "Buddy v2",
   "description": "Mobile-first powerlifting training cockpit.",
   "start_url": ".",
+  "scope": ".",
   "display": "standalone",
-  "background_color": "#08111f",
-  "theme_color": "#0f172a",
+  "background_color": "#10100f",
+  "theme_color": "#10100f",
   "orientation": "portrait-primary",
-  "icons": []
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
