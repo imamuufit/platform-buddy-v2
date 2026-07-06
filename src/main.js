@@ -1,599 +1,485 @@
-import { MEET_ATTEMPT_NOTES } from "./meet-attempt-notes.js";
-import { readStorageValue, STORAGE_KEYS, writeStorageValue } from "./storage.js";
-
-const screens = {
-  home: {
-    label: "HOME",
-    title: "Bench press focus day",
-    copy: "今日はベンチの質を最優先。最初のワークセットを丁寧に決めて、予定はPLANで確認します。",
-    action: "Open today's plan",
-    status: ["Ready", "Normal fatigue", "No meet set"],
-    goal: "Next goal: build toward meet-ready attempts.",
-    wellness: [
-      ["Sleep", "Neutral"],
-      ["Soreness", "Low"],
-      ["Stress", "Normal"]
-    ],
-    meet: "Meet date not set",
-    buddy: "Buddy note: Keep the first work set crisp. Adjust only after the top set."
-  },
-  log: {
-    label: "LOG",
-    title: "Record the next set",
-    copy: "バーを置いたらすぐ残す。入力順はリフト、重量、回数、RPE、保存。メモは後で十分です。",
-    fields: [
-      ["Lift", "Bench press", "lift"],
-      ["Weight", "120 kg", "weight"],
-      ["Reps", "5", "reps"],
-      ["RPE", "8", "rpe"]
-    ],
-    action: "Save draft",
-    memo: "Memo: draft stays on this device."
-  },
-  plan: {
-    label: "PLAN",
-    title: "Today's prescription",
-    copy: "設定より先に、今日やる内容を確認します。数値は静的な仮置きで、処方ロジックはまだ追加しません。",
-    mainLift: "Bench press",
-    topSet: "Top set: 120 kg × 5 @ RPE 8",
-    backoff: "Backoff: 105 kg × 5 × 3",
-    target: "Target: crisp reps, stable pause",
-    cycle: [
-      ["Cycle", "Base block"],
-      ["Week", "1 / 4"],
-      ["Intent", "Accumulate clean volume"]
-    ],
-    rule: "Adjustment rule: if warm-ups feel heavy, keep the top set conservative.",
-    buddy: "Buddy note: Do not negotiate with the bar before the first work set."
-  },
-  data: {
-    label: "DATA",
-    title: "Training judgment",
-    copy: "グラフを見る前に、次の判断を確認します。ここでは静的な仮置きだけを表示し、計算やチャートはまだ追加しません。",
-    judgment: "Hold the load and clean up execution.",
-    signals: [
-      ["e1RM trend", "Flat"],
-      ["RPE drift", "Slightly high"],
-      ["Completion", "On track"],
-      ["Fatigue", "Manageable"]
-    ],
-    recommendation: "Next recommendation: repeat the prescription before increasing load.",
-    buddy: "Buddy note: A flat trend is not a failure. It is a request for cleaner reps."
-  },
-  meet: {
-    label: "MEET",
-    title: "Meet day cockpit",
-    copy: "試合の日に迷わないための静的チェック画面です。試技計算や日付ロジックはまだ追加しません。",
-    status: "Meet date not set",
-    attempts: [
-      ["Squat", "Opener not set", "squat"],
-      ["Bench", "Opener not set", "bench"],
-      ["Deadlift", "Opener not set", "deadlift"]
-    ],
-    checks: ["Rack height", "Equipment", "Weigh-in", "Warm-up timing"],
-    readiness: ["Weigh-in", "Rack heights", "Warm-up plan", "Openers", "Commands"],
-    rules: "White lights first: commands, depth, pause, lockout, and control before load selection.",
-    buddy: "Buddy note: The first attempt is not a statement. It is an entry ticket."
-  }
-};
+import {
+  DEFAULT_BUDDY_SETTINGS,
+  LIFTS,
+  activeLiftIds,
+  accessoryVolumeLabel,
+  experienceLabel,
+  formatKg,
+  generateBuddyProgram,
+  liftLabel,
+  normalizeBuddySettings
+} from "./buddy-method.js";
+import { readJsonStorage, readStorageValue, STORAGE_KEYS, writeJsonStorage, writeStorageValue } from "./storage.js";
 
 const app = document.querySelector("#app");
 const navItems = Array.from(document.querySelectorAll(".nav-item"));
-const logDraftDefaults = Object.fromEntries(screens.log.fields.map(([, value, key]) => [key, value]));
-const meetAttemptDraftDefaults = Object.fromEntries(screens.meet.attempts.map(([, value, key]) => [key, value]));
 
-function isKnownView(viewName) {
-  return Object.prototype.hasOwnProperty.call(screens, viewName);
+const views = {
+  home: "HOME",
+  plan: "PLAN",
+  log: "LOG",
+  data: "DATA",
+  meet: "MEET"
+};
+
+function readSettings() {
+  return normalizeBuddySettings(readJsonStorage(STORAGE_KEYS.buddyMethodSettings, DEFAULT_BUDDY_SETTINGS));
+}
+
+function saveSettings(settings) {
+  writeJsonStorage(STORAGE_KEYS.buddyMethodSettings, normalizeBuddySettings(settings));
 }
 
 function readStoredView() {
   const storedView = readStorageValue(STORAGE_KEYS.activeView, "home");
-  return isKnownView(storedView) ? storedView : "home";
+  return Object.prototype.hasOwnProperty.call(views, storedView) ? storedView : "home";
 }
 
 function writeStoredView(viewName) {
-  if (!isKnownView(viewName)) {
-    return;
+  if (Object.prototype.hasOwnProperty.call(views, viewName)) {
+    writeStorageValue(STORAGE_KEYS.activeView, viewName);
   }
-
-  writeStorageValue(STORAGE_KEYS.activeView, viewName);
 }
 
-function escapeAttributeValue(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-function escapeTextContent(value) {
-  return String(value)
+function escapeText(value) {
+  return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
 
-function getLogInputAttributes(key) {
-  const baseAttributes = 'autocomplete="off" autocapitalize="off" spellcheck="false"';
-
-  if (["weight", "reps", "rpe"].includes(key)) {
-    return `inputmode="decimal" ${baseAttributes}`;
-  }
-
-  return baseAttributes;
+function escapeAttribute(value) {
+  return escapeText(value).replace(/"/g, "&quot;");
 }
 
-function parsePositiveNumber(value) {
-  const parsed = Number.parseFloat(String(value).replace(/,/g, ""));
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
+function renderHome() {
+  const settings = readSettings();
+  const program = generateBuddyProgram(settings);
+  const nextDay = program.weeks[0]?.days[0];
+  const firstLift = activeLiftIds(settings)[0];
+  const firstProjection = program.projections[firstLift];
 
-function estimateE1rm(draft) {
-  const weight = parsePositiveNumber(draft.weight);
-  const reps = parsePositiveNumber(draft.reps);
-
-  if (!weight || !reps || reps > 12) {
-    return null;
-  }
-
-  return Math.round(weight * (1 + reps / 30) * 2) / 2;
-}
-
-function formatE1rmPreview(draft) {
-  const e1rm = estimateE1rm(draft);
-
-  if (!e1rm) {
-    return "Enter weight and 1–12 reps.";
-  }
-
-  return `${e1rm} kg`;
-}
-
-function formatRpeHelper(draft) {
-  const rpe = parsePositiveNumber(draft.rpe);
-
-  if (!rpe || rpe < 1 || rpe > 10) {
-    return "Enter RPE 1–10.";
-  }
-
-  if (rpe <= 6) {
-    return "Very easy: keep technique tight.";
-  }
-
-  if (rpe <= 7.5) {
-    return "Controlled: likely room to build.";
-  }
-
-  if (rpe <= 8.5) {
-    return "Working range: stay crisp.";
-  }
-
-  if (rpe <= 9.5) {
-    return "Heavy: protect the next set.";
-  }
-
-  return "Limit effort: stop before form breaks.";
-}
-
-function readLogDraft() {
-  const storedDraft = readStorageValue(STORAGE_KEYS.logDraft, "{}");
-
-  try {
-    const parsedDraft = JSON.parse(storedDraft);
-    return { ...logDraftDefaults, ...parsedDraft };
-  } catch {
-    return { ...logDraftDefaults };
-  }
-}
-
-function writeLogDraft(draft) {
-  writeStorageValue(STORAGE_KEYS.logDraft, JSON.stringify(draft));
-}
-
-function collectLogDraft() {
-  const draft = { ...logDraftDefaults };
-  app.querySelectorAll("[data-log-field]").forEach((input) => {
-    draft[input.dataset.logField] = input.value;
-  });
-  return draft;
-}
-
-function updateLogPreviews(draft) {
-  const e1rmPreview = app.querySelector("[data-e1rm-preview]");
-  const rpeHelper = app.querySelector("[data-rpe-helper]");
-
-  if (e1rmPreview) {
-    e1rmPreview.textContent = formatE1rmPreview(draft);
-  }
-
-  if (rpeHelper) {
-    rpeHelper.textContent = formatRpeHelper(draft);
-  }
-}
-
-function bindLogDraftControls() {
-  const inputs = Array.from(app.querySelectorAll("[data-log-field]"));
-  const saveButton = app.querySelector("[data-log-save]");
-  const status = app.querySelector("[data-log-status]");
-
-  inputs.forEach((input) => {
-    input.addEventListener("input", () => {
-      const draft = collectLogDraft();
-      writeLogDraft(draft);
-      updateLogPreviews(draft);
-    });
-  });
-
-  saveButton?.addEventListener("click", () => {
-    writeLogDraft(collectLogDraft());
-    if (status) {
-      status.textContent = "Draft saved on this device.";
-    }
-  });
-}
-
-function readMeetAttemptDraft() {
-  const storedDraft = readStorageValue(STORAGE_KEYS.meetAttemptDraft, "{}");
-
-  try {
-    const parsedDraft = JSON.parse(storedDraft);
-    return { ...meetAttemptDraftDefaults, ...parsedDraft };
-  } catch {
-    return { ...meetAttemptDraftDefaults };
-  }
-}
-
-function writeMeetAttemptDraft(draft) {
-  writeStorageValue(STORAGE_KEYS.meetAttemptDraft, JSON.stringify(draft));
-}
-
-function collectMeetAttemptDraft() {
-  const draft = { ...meetAttemptDraftDefaults };
-  app.querySelectorAll("[data-meet-attempt-field]").forEach((input) => {
-    draft[input.dataset.meetAttemptField] = input.value;
-  });
-  return draft;
-}
-
-function updateMeetAttemptSummary(draft) {
-  app.querySelectorAll("[data-meet-attempt-summary]").forEach((summary) => {
-    summary.textContent = draft[summary.dataset.meetAttemptSummary] ?? "";
-  });
-}
-
-function bindMeetAttemptDraftControls() {
-  const inputs = Array.from(app.querySelectorAll("[data-meet-attempt-field]"));
-  const saveButton = app.querySelector("[data-meet-attempt-save]");
-  const status = app.querySelector("[data-meet-attempt-status]");
-
-  inputs.forEach((input) => {
-    input.addEventListener("input", () => {
-      const draft = collectMeetAttemptDraft();
-      writeMeetAttemptDraft(draft);
-      updateMeetAttemptSummary(draft);
-      if (status) {
-        status.textContent = "Attempt draft updated locally.";
-      }
-    });
-  });
-
-  saveButton?.addEventListener("click", () => {
-    writeMeetAttemptDraft(collectMeetAttemptDraft());
-    if (status) {
-      status.textContent = "Attempt draft saved on this device.";
-    }
-  });
-}
-
-function readMeetMemo() {
-  return readStorageValue(STORAGE_KEYS.meetMemo, "");
-}
-
-function writeMeetMemo(memo) {
-  writeStorageValue(STORAGE_KEYS.meetMemo, memo);
-}
-
-function bindMeetMemoControls() {
-  const input = app.querySelector("[data-meet-memo]");
-  const saveButton = app.querySelector("[data-meet-memo-save]");
-  const status = app.querySelector("[data-meet-memo-status]");
-
-  input?.addEventListener("input", () => {
-    writeMeetMemo(input.value);
-    if (status) {
-      status.textContent = "Meet memo updated locally.";
-    }
-  });
-
-  saveButton?.addEventListener("click", () => {
-    writeMeetMemo(input?.value ?? "");
-    if (status) {
-      status.textContent = "Meet memo saved on this device.";
-    }
-  });
-}
-
-function renderHomeScreen(screen) {
   app.innerHTML = `
-    <section class="home-dashboard" aria-labelledby="screen-title">
-      <p class="screen-label">${screen.label}</p>
-      <div class="home-hero">
-        <div>
-          <h2 id="screen-title" class="screen-title">${screen.title}</h2>
-          <p class="screen-copy">${screen.copy}</p>
+    <section class="hero-panel" aria-labelledby="screen-title">
+      <p class="screen-label">HOME</p>
+      <h2 id="screen-title" class="screen-title">今日のトレーニングを決める</h2>
+      <p class="screen-copy">旧Platform BuddyのBuddy Method設定から、スマホで読めるPWA用プランを生成します。</p>
+      <button class="primary-action" type="button" data-open-plan>PLANを開く</button>
+    </section>
+
+    <section class="summary-grid" aria-label="Saved program summary">
+      ${summaryCard("対象", program.summary.targetLabel)}
+      ${summaryCard("期間", program.summary.lengthLabel)}
+      ${summaryCard("頻度", program.summary.frequencyLabel)}
+      ${summaryCard("補助", program.summary.accessoryLabel)}
+    </section>
+
+    <section class="detail-card" aria-label="Today suggestion">
+      <div class="section-heading">
+        <span>Today</span>
+        <strong>${escapeText(nextDay?.title || "PLAN未生成")}</strong>
+      </div>
+      <p>${escapeText(nextDay ? `${program.weeks[0].phase.name}: ${program.weeks[0].note}` : "PLANで設定を保存してください。")}</p>
+    </section>
+
+    <section class="detail-card" aria-label="Recent strength signal">
+      <div class="section-heading">
+        <span>最終週の目安</span>
+        <strong>${escapeText(firstProjection?.label || "-")}</strong>
+      </div>
+      <p>${escapeText(liftLabel(firstLift))}の現在1RM ${formatKg(settings.maxes[firstLift])}kg からの到達候補です。命令ではなく、最終週の挑戦目安として扱います。</p>
+    </section>
+
+    <section class="buddy-note" aria-label="Buddy note">
+      <span>Buddy note</span>
+      <p>今日はまずPLANを確認。軽ければ少し足すより、予定RPEで白判定の形を残します。</p>
+    </section>
+  `;
+
+  app.querySelector("[data-open-plan]")?.addEventListener("click", () => navigate("plan"));
+}
+
+function renderPlan() {
+  const settings = readSettings();
+  const program = generateBuddyProgram(settings);
+
+  app.innerHTML = `
+    <section class="hero-panel" aria-labelledby="screen-title">
+      <p class="screen-label">PLAN</p>
+      <h2 id="screen-title" class="screen-title">Buddy Method プラン生成</h2>
+      <p class="screen-copy">対象、週数、頻度、補助量、現在1RMを入れると、Week / Dayカードでプログラムを生成します。</p>
+    </section>
+
+    ${renderSettingsForm(settings)}
+    ${renderProgramSummary(program)}
+    ${renderPredictionPanel(program)}
+    ${renderWeekList(program)}
+  `;
+
+  bindSettingsForm(settings);
+}
+
+function renderLog() {
+  const settings = readSettings();
+  const program = generateBuddyProgram(settings);
+  const today = program.weeks[0]?.days[0];
+
+  app.innerHTML = `
+    <section class="hero-panel" aria-labelledby="screen-title">
+      <p class="screen-label">LOG</p>
+      <h2 id="screen-title" class="screen-title">今日の実施メモ</h2>
+      <p class="screen-copy">このMVPではPLAN生成を優先しています。LOG本格保存は次の作業範囲です。</p>
+    </section>
+    <section class="detail-card">
+      <div class="section-heading">
+        <span>今日見るカード</span>
+        <strong>${escapeText(today?.title || "PLAN")}</strong>
+      </div>
+      <p>セット記録は未移植です。まずPLANで重量、回数、補助量を確認して使います。</p>
+    </section>
+  `;
+}
+
+function renderData() {
+  const settings = readSettings();
+  const program = generateBuddyProgram(settings);
+
+  app.innerHTML = `
+    <section class="hero-panel" aria-labelledby="screen-title">
+      <p class="screen-label">DATA</p>
+      <h2 id="screen-title" class="screen-title">現在1RMと到達候補</h2>
+      <p class="screen-copy">複雑なグラフではなく、今の設定から見える強度目安だけを表示します。</p>
+    </section>
+    <section class="metric-list" aria-label="Projected PR list">
+      ${program.lifts.map((lift) => metricRow(liftLabel(lift), `${formatKg(settings.maxes[lift])}kg`, program.projections[lift].label)).join("")}
+    </section>
+    <section class="detail-card">
+      <div class="section-heading">
+        <span>判断</span>
+        <strong>保守的に進める</strong>
+      </div>
+      <p>予測PRは到達候補です。今日のRPEが高い場合は重量を足さず、次回へ良い反復を残します。</p>
+    </section>
+  `;
+}
+
+function renderMeet() {
+  const settings = readSettings();
+  const program = generateBuddyProgram(settings);
+
+  app.innerHTML = `
+    <section class="hero-panel" aria-labelledby="screen-title">
+      <p class="screen-label">MEET</p>
+      <h2 id="screen-title" class="screen-title">最終週の試技候補</h2>
+      <p class="screen-copy">旧ロジックの最終週MAXチェックを、試技候補の目安として表示します。</p>
+    </section>
+    <section class="attempt-list" aria-label="Attempt suggestions">
+      ${program.lifts.map((lift) => attemptCard(lift, settings, program.projections[lift])).join("")}
+    </section>
+    <section class="buddy-note">
+      <span>Buddy note</span>
+      <p>第一は自己主張ではなく入場券。白を取ってから第二、第三を考えます。</p>
+    </section>
+  `;
+}
+
+function renderSettingsForm(settings) {
+  const activeLifts = activeLiftIds(settings);
+  const isBenchOnly = settings.target === "bench_only";
+
+  return `
+    <section class="settings-panel" aria-label="Program settings">
+      <form class="settings-form" data-settings-form>
+        <label>
+          <span>対象</span>
+          <select name="target" data-field="target">
+            ${option("big3", "BIG3", settings.target)}
+            ${option("bench_only", "ベンチプレスのみ", settings.target)}
+          </select>
+        </label>
+
+        <label>
+          <span>期間</span>
+          <select name="length" data-field="length">
+            ${option(4, "4週間", settings.length)}
+            ${option(8, "8週間", settings.length)}
+            ${option(12, "12週間", settings.length)}
+          </select>
+        </label>
+
+        <label>
+          <span>週回数</span>
+          <select name="daysPerWeek" data-field="daysPerWeek">
+            ${option(3, "週3回", settings.daysPerWeek)}
+            ${option(4, "週4回", settings.daysPerWeek)}
+            ${option(5, "週5回", settings.daysPerWeek)}
+          </select>
+        </label>
+
+        <label>
+          <span>補助種目</span>
+          <select name="accessoryVolume" data-field="accessoryVolume">
+            ${option("low", "少なめ", settings.accessoryVolume)}
+            ${option("normal", "普通", settings.accessoryVolume)}
+            ${option("high", "多め", settings.accessoryVolume)}
+          </select>
+        </label>
+
+        <label>
+          <span>経験レベル</span>
+          <select name="experienceLevel" data-field="experienceLevel">
+            ${option("beginner", "初級", settings.experienceLevel)}
+            ${option("intermediate", "中級", settings.experienceLevel)}
+            ${option("advanced", "上級", settings.experienceLevel)}
+          </select>
+        </label>
+
+        <label>
+          <span>重点種目</span>
+          <select name="priorityLift" data-field="priorityLift" ${isBenchOnly ? "disabled" : ""}>
+            ${option("total", "バランス型", settings.priorityLift)}
+            ${option("squat", "スクワット", settings.priorityLift)}
+            ${option("bench", "ベンチプレス", settings.priorityLift)}
+            ${option("deadlift", "デッドリフト", settings.priorityLift)}
+          </select>
+        </label>
+
+        <div class="max-inputs" aria-label="Current one rep max inputs">
+          ${activeLifts.map((lift) => maxInput(lift, settings.maxes[lift])).join("")}
         </div>
-        <button class="primary-action" type="button">${screen.action}</button>
-      </div>
-      <div class="status-row" aria-label="Current status">
-        ${screen.status.map((item) => `<span class="status-chip">${item}</span>`).join("")}
-      </div>
-    </section>
 
-    <section class="detail-card goal-card" aria-label="Goal distance">
-      <h3>Goal distance</h3>
-      <p>${screen.goal}</p>
-    </section>
-
-    <section class="detail-card compact-card" aria-label="Wellness state">
-      <h3>Wellness state</h3>
-      <div class="wellness-grid">
-        ${screen.wellness
-          .map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`)
-          .join("")}
-      </div>
-    </section>
-
-    <section class="detail-card compact-card" aria-label="Meet countdown">
-      <h3>Meet</h3>
-      <p>${screen.meet}</p>
-    </section>
-
-    <section class="detail-card buddy-note" aria-label="Buddy note">
-      <h3>Buddy note</h3>
-      <p>${screen.buddy}</p>
+        <button class="primary-action" type="submit">保存して生成</button>
+        <p class="form-note" data-save-status>設定はこの端末のlocalStorageに保存されます。</p>
+      </form>
     </section>
   `;
 }
 
-function renderSetEntryScreen(screen) {
-  const logDraft = readLogDraft();
+function renderProgramSummary(program) {
+  const settings = program.settings;
+  const maxText = program.lifts.map((lift) => `${LIFTS[lift].short} ${formatKg(settings.maxes[lift])}kg`).join(" / ");
 
-  app.innerHTML = `
-    <section class="set-entry-card" aria-labelledby="screen-title">
-      <p class="screen-label">${screen.label}</p>
-      <h2 id="screen-title" class="screen-title">${screen.title}</h2>
-      <p class="screen-copy">${screen.copy}</p>
-      <div class="set-grid" aria-label="Set entry order">
-        ${screen.fields
-          .map(
-            ([label, , key]) =>
-              `<label><span>${label}</span><input value="${escapeAttributeValue(logDraft[key])}" ${getLogInputAttributes(key)} data-log-field="${key}" /></label>`
-          )
-          .join("")}
+  return `
+    <section class="program-summary" aria-label="Program summary">
+      <div>
+        <span>プログラム概要</span>
+        <strong>${program.summary.targetLabel} / ${program.summary.lengthLabel} / ${program.summary.frequencyLabel}</strong>
       </div>
-      <div class="log-preview-grid" aria-label="Set preview helpers">
-        <div class="e1rm-preview" aria-label="Estimated one rep max">
-          <span>Estimated 1RM</span>
-          <strong data-e1rm-preview>${formatE1rmPreview(logDraft)}</strong>
-        </div>
-        <div class="rpe-helper" aria-label="RPE helper">
-          <span>RPE helper</span>
-          <strong data-rpe-helper>${formatRpeHelper(logDraft)}</strong>
-        </div>
+      <div>
+        <span>現在1RM</span>
+        <strong>${escapeText(maxText)}</strong>
       </div>
-      <button class="save-action" type="button" data-log-save>${screen.action}</button>
-    </section>
-    <section class="detail-card" aria-label="Secondary memo">
-      <h3>Memo</h3>
-      <p data-log-status>${screen.memo}</p>
-    </section>
-  `;
-
-  bindLogDraftControls();
-}
-
-function renderTrainingPlanScreen(screen) {
-  app.innerHTML = `
-    <section class="plan-card" aria-labelledby="screen-title">
-      <p class="screen-label">${screen.label}</p>
-      <h2 id="screen-title" class="screen-title">${screen.title}</h2>
-      <p class="screen-copy">${screen.copy}</p>
-      <div class="plan-main" aria-label="Today's main work">
-        <span>Main lift</span>
-        <strong>${screen.mainLift}</strong>
+      <div>
+        <span>補助量・経験・重点</span>
+        <strong>${program.summary.accessoryLabel} / ${program.summary.experienceLabel} / ${program.summary.priorityLabel}</strong>
       </div>
-      <div class="plan-stack" aria-label="Today's work prescription">
-        <div><span>Top set</span><strong>${screen.topSet}</strong></div>
-        <div><span>Backoff</span><strong>${screen.backoff}</strong></div>
-        <div><span>Target</span><strong>${screen.target}</strong></div>
-      </div>
-      <div class="cycle-grid" aria-label="Training cycle status">
-        ${screen.cycle
-          .map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`)
-          .join("")}
-      </div>
-    </section>
-    <section class="detail-card" aria-label="Adjustment rule">
-      <h3>Adjustment rule</h3>
-      <p>${screen.rule}</p>
-    </section>
-    <section class="detail-card buddy-note" aria-label="Buddy note">
-      <h3>Buddy note</h3>
-      <p>${screen.buddy}</p>
     </section>
   `;
 }
 
-function renderDataScreen(screen) {
-  app.innerHTML = `
-    <section class="data-card" aria-labelledby="screen-title">
-      <p class="screen-label">${screen.label}</p>
-      <h2 id="screen-title" class="screen-title">${screen.title}</h2>
-      <p class="screen-copy">${screen.copy}</p>
-      <div class="judgment-panel" aria-label="Training judgment">
-        <span>Judgment</span>
-        <strong>${screen.judgment}</strong>
+function renderPredictionPanel(program) {
+  return `
+    <section class="prediction-panel" aria-label="Projected PR ranges">
+      <div class="section-heading">
+        <span>最終週の到達候補</span>
+        <strong>予測PR目安</strong>
       </div>
-      <div class="signal-grid" aria-label="Training signals">
-        ${screen.signals
-          .map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`)
-          .join("")}
+      <div class="prediction-grid">
+        ${program.lifts.map((lift) => `
+          <article>
+            <span>${LIFTS[lift].short}</span>
+            <strong>${escapeText(program.projections[lift].label)}</strong>
+            <p>${escapeText(liftLabel(lift))}</p>
+          </article>
+        `).join("")}
       </div>
-    </section>
-    <section class="detail-card" aria-label="Next recommendation">
-      <h3>Next recommendation</h3>
-      <p>${screen.recommendation}</p>
-    </section>
-    <section class="detail-card buddy-note" aria-label="Buddy note">
-      <h3>Buddy note</h3>
-      <p>${screen.buddy}</p>
+      <p class="panel-note">数値は命令ではなく到達目安です。RPEが高い日は維持か減量を優先します。</p>
     </section>
   `;
 }
 
-function renderMeetScreen(screen) {
-  const meetAttemptDraft = readMeetAttemptDraft();
-  const meetMemo = readMeetMemo();
-
-  app.innerHTML = `
-    <section class="meet-card" aria-labelledby="screen-title">
-      <p class="screen-label">${screen.label}</p>
-      <h2 id="screen-title" class="screen-title">${screen.title}</h2>
-      <p class="screen-copy">${screen.copy}</p>
-      <div class="meet-status" aria-label="Meet status">
-        <span>Status</span>
-        <strong>${screen.status}</strong>
-      </div>
-      <div class="attempt-grid" aria-label="Attempt placeholders">
-        ${screen.attempts
-          .map(
-            ([label, , key]) =>
-              `<div><span>${label}</span><strong data-meet-attempt-summary="${key}">${escapeTextContent(meetAttemptDraft[key])}</strong></div>`
-          )
-          .join("")}
-      </div>
-    </section>
-    <section class="detail-card" aria-label="Meet readiness order">
-      <h3>Readiness order</h3>
-      <ol class="readiness-list">
-        ${screen.readiness.map((item) => `<li>${item}</li>`).join("")}
-      </ol>
-    </section>
-    <section class="detail-card" aria-label="Attempt notes">
-      <h3>Attempt notes</h3>
-      <ol class="readiness-list">
-        ${MEET_ATTEMPT_NOTES.map((item) => `<li>${item}</li>`).join("")}
-      </ol>
-    </section>
-    <section class="detail-card" aria-label="Attempt draft">
-      <h3>Attempt draft</h3>
-      <div class="set-grid" aria-label="Saved attempt draft">
-        ${screen.attempts
-          .map(
-            ([label, , key]) =>
-              `<label><span>${label}</span><input value="${escapeAttributeValue(meetAttemptDraft[key])}" inputmode="decimal" autocomplete="off" autocapitalize="off" spellcheck="false" data-meet-attempt-field="${key}" /></label>`
-          )
-          .join("")}
-      </div>
-      <button class="save-action" type="button" data-meet-attempt-save>Save attempt draft</button>
-      <p class="save-status" data-meet-attempt-status>Attempt draft stays on this device.</p>
-    </section>
-    <section class="detail-card" aria-label="Meet memo">
-      <h3>Meet memo</h3>
-      <textarea class="meet-memo-box" data-meet-memo placeholder="Rack heights, commands, opener thoughts">${escapeTextContent(meetMemo)}</textarea>
-      <button class="save-action" type="button" data-meet-memo-save>Save meet memo</button>
-      <p class="save-status" data-meet-memo-status>Memo stays on this device.</p>
-    </section>
-    <section class="detail-card" aria-label="Meet checklist">
-      <h3>Checklist</h3>
-      <div class="checklist-row">
-        ${screen.checks.map((item) => `<span>${item}</span>`).join("")}
-      </div>
-    </section>
-    <section class="detail-card" aria-label="White light rules">
-      <h3>White light focus</h3>
-      <p>${screen.rules}</p>
-    </section>
-    <section class="detail-card buddy-note" aria-label="Buddy note">
-      <h3>Buddy note</h3>
-      <p>${screen.buddy}</p>
-    </section>
-  `;
-
-  bindMeetAttemptDraftControls();
-  bindMeetMemoControls();
-}
-
-function renderPlaceholderScreen(screen) {
-  app.innerHTML = `
-      <section class="primary-card" aria-labelledby="screen-title">
-      <p class="screen-label">${screen.label}</p>
-      <h2 id="screen-title" class="screen-title">${screen.title}</h2>
-      <p class="screen-copy">${screen.copy}</p>
-      <div class="action-row" aria-label="Key placeholders">
-        <div class="action-chip"><strong>${screen.primary[0]}</strong><span>${screen.primary[1]}</span></div>
-        <div class="action-chip"><strong>${screen.secondary[0]}</strong><span>${screen.secondary[1]}</span></div>
-      </div>
-    </section>
-    <section class="detail-card" aria-label="Buddy note">
-      <h3>Buddy note</h3>
-      <p>必要な情報だけを出す。入力を邪魔しない。ここでは静かな一言だけを置きます。</p>
+function renderWeekList(program) {
+  return `
+    <section class="week-list" aria-label="Generated weekly plan" data-week-list>
+      ${program.weeks.map((week) => `
+        <article class="week-card" data-week-card="${week.week}">
+          <header class="week-header">
+            <div>
+              <span>Week ${week.week}</span>
+              <strong>${escapeText(week.phase.name)}</strong>
+            </div>
+            <p>${escapeText(week.phase.tone)}</p>
+          </header>
+          <p class="week-note">${escapeText(week.note)}</p>
+          <div class="day-list">
+            ${week.days.map((day, index) => renderDayCard(day, index + 1)).join("")}
+          </div>
+        </article>
+      `).join("")}
     </section>
   `;
 }
 
-function renderScreen(viewName) {
-  const screen = screens[viewName] ?? screens.home;
-
-  if (viewName === "home") {
-    renderHomeScreen(screen);
-    return;
-  }
-
-  if (viewName === "log") {
-    renderSetEntryScreen(screen);
-    return;
-  }
-
-  if (viewName === "plan") {
-    renderTrainingPlanScreen(screen);
-    return;
-  }
-
-  if (viewName === "data") {
-    renderDataScreen(screen);
-    return;
-  }
-
-  if (viewName === "meet") {
-    renderMeetScreen(screen);
-    return;
-  }
-
-  renderPlaceholderScreen(screen);
+function renderDayCard(day, dayNumber) {
+  return `
+    <article class="day-card" data-day-card>
+      <header>
+        <span>Day ${dayNumber}</span>
+        <strong>${escapeText(day.title)}</strong>
+      </header>
+      <div class="work-list">
+        ${day.items.map((item) => item.type === "main" ? mainWorkRow(item) : accessoryRow(item)).join("")}
+      </div>
+    </article>
+  `;
 }
 
-function setActiveNav(viewName) {
-  navItems.forEach((item) => {
-    const isActive = item.dataset.view === viewName;
-    item.classList.toggle("is-active", isActive);
-    if (isActive) {
-      item.setAttribute("aria-current", "page");
-    } else {
-      item.removeAttribute("aria-current");
+function mainWorkRow(item) {
+  return `
+    <div class="work-row main-work" data-main-lift="${escapeAttribute(item.lift)}">
+      <div>
+        <span>${escapeText(item.label)}</span>
+        <strong>${escapeText(item.prescription.title)}</strong>
+      </div>
+      <dl>
+        <div><dt>%1RM</dt><dd>${escapeText(item.prescription.percent)}</dd></div>
+        <div><dt>set</dt><dd>${escapeText(item.prescription.sets)}</dd></div>
+        <div><dt>rep</dt><dd>${escapeText(item.prescription.reps)}</dd></div>
+        <div><dt>RPE</dt><dd>${escapeText(item.prescription.rpe)}</dd></div>
+      </dl>
+      <p>${escapeText(item.prescription.note)}</p>
+    </div>
+  `;
+}
+
+function accessoryRow(item) {
+  return `
+    <div class="work-row accessory-work" data-accessory>
+      <div>
+        <span>補助</span>
+        <strong>${escapeText(item.label)}</strong>
+      </div>
+      <p>${escapeText(item.work)} / ${escapeText(item.note)}</p>
+    </div>
+  `;
+}
+
+function attemptCard(lift, settings, projection) {
+  const max = settings.maxes[lift];
+  const openerLow = max * 0.9;
+  const openerHigh = max * 0.93;
+  const secondLow = max * 0.95;
+  const secondHigh = max * 0.98;
+
+  return `
+    <article class="attempt-card">
+      <span>${escapeText(liftLabel(lift))}</span>
+      <strong>第三候補 ${escapeText(projection.label)}</strong>
+      <p>第一 ${rangeText(openerLow, openerHigh)} / 第二 ${rangeText(secondLow, secondHigh)}</p>
+      <small>すべて提案です。第一は確実に白を取る重量を優先。</small>
+    </article>
+  `;
+}
+
+function bindSettingsForm(currentSettings) {
+  const form = app.querySelector("[data-settings-form]");
+  if (!form) return;
+
+  form.addEventListener("change", (event) => {
+    const nextSettings = settingsFromForm(form, currentSettings);
+    saveSettings(nextSettings);
+    if (event.target?.name === "target") renderPlan();
+  });
+
+  form.addEventListener("input", () => {
+    const nextSettings = settingsFromForm(form, currentSettings);
+    saveSettings(nextSettings);
+  });
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const nextSettings = settingsFromForm(form, currentSettings);
+    saveSettings(nextSettings);
+    renderPlan();
+  });
+}
+
+function settingsFromForm(form, previousSettings) {
+  const formData = new FormData(form);
+  const target = String(formData.get("target") || previousSettings.target);
+  const priorityLift = target === "bench_only" ? "bench" : String(formData.get("priorityLift") || previousSettings.priorityLift);
+
+  return normalizeBuddySettings({
+    target,
+    length: Number(formData.get("length") || previousSettings.length),
+    daysPerWeek: Number(formData.get("daysPerWeek") || previousSettings.daysPerWeek),
+    accessoryVolume: String(formData.get("accessoryVolume") || previousSettings.accessoryVolume),
+    experienceLevel: String(formData.get("experienceLevel") || previousSettings.experienceLevel),
+    priorityLift,
+    maxes: {
+      squat: formData.get("max-squat") ?? previousSettings.maxes.squat,
+      bench: formData.get("max-bench") ?? previousSettings.maxes.bench,
+      deadlift: formData.get("max-deadlift") ?? previousSettings.maxes.deadlift
     }
   });
 }
 
 function navigate(viewName) {
-  if (!isKnownView(viewName)) {
-    return;
-  }
+  if (!Object.prototype.hasOwnProperty.call(views, viewName)) return;
 
-  renderScreen(viewName);
-  setActiveNav(viewName);
+  if (viewName === "home") renderHome();
+  if (viewName === "plan") renderPlan();
+  if (viewName === "log") renderLog();
+  if (viewName === "data") renderData();
+  if (viewName === "meet") renderMeet();
+
+  navItems.forEach((item) => {
+    const isActive = item.dataset.view === viewName;
+    item.classList.toggle("is-active", isActive);
+    if (isActive) item.setAttribute("aria-current", "page");
+    else item.removeAttribute("aria-current");
+  });
+
   writeStoredView(viewName);
+  app.focus({ preventScroll: true });
+}
+
+function option(value, label, currentValue) {
+  return `<option value="${escapeAttribute(value)}" ${String(value) === String(currentValue) ? "selected" : ""}>${escapeText(label)}</option>`;
+}
+
+function maxInput(lift, value) {
+  return `
+    <label>
+      <span>現在1RM ${LIFTS[lift].short}</span>
+      <input name="max-${lift}" data-max-input="${lift}" type="number" inputmode="decimal" min="0" step="2.5" value="${escapeAttribute(value)}" />
+    </label>
+  `;
+}
+
+function summaryCard(label, value) {
+  return `
+    <article>
+      <span>${escapeText(label)}</span>
+      <strong>${escapeText(value)}</strong>
+    </article>
+  `;
+}
+
+function metricRow(label, max, projection) {
+  return `
+    <article>
+      <span>${escapeText(label)}</span>
+      <strong>${escapeText(max)}</strong>
+      <p>到達候補 ${escapeText(projection)}</p>
+    </article>
+  `;
+}
+
+function rangeText(low, high) {
+  const min = Math.round(low / 2.5) * 2.5;
+  const max = Math.max(min, Math.round(high / 2.5) * 2.5);
+  return `${formatKg(min)}-${formatKg(max)}kg`;
 }
 
 navItems.forEach((item) => {
