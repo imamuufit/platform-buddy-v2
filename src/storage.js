@@ -4,7 +4,8 @@ export const STORAGE_KEYS = {
   meetMemo: "platformBuddy.meetMemo",
   meetAttemptDraft: "platformBuddy.meetAttemptDraft",
   buddyMethodSettings: "platformBuddy.buddyMethodSettings",
-  trainingLogs: "platformBuddy.trainingLogs"
+  trainingLogs: "platformBuddy.trainingLogs",
+  lifterProfile: "platformBuddy.lifterProfile"
 };
 
 export function readStorageValue(key, fallbackValue) {
