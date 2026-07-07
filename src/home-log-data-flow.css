@@ -1,0 +1,205 @@
+.plan-focus-card,
+.data-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--surface);
+  box-shadow: 0 16px 42px var(--shadow);
+}
+
+.week-card > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.week-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.plan-jump-grid,
+.home-training-summary,
+.data-card-grid,
+.quick-choice-grid,
+.work-type-toggle,
+.choice-row {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.home-training-summary,
+.quick-choice-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.plan-jump-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.home-training-summary article,
+.recommendation-pill {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px;
+  background: var(--surface-strong);
+}
+
+.home-training-summary span,
+.home-training-summary strong,
+.attention-list strong,
+.work-type-field > span,
+.quick-choice-field legend,
+.recommendation-pill span,
+.recommendation-pill strong {
+  display: block;
+}
+
+.home-training-summary span,
+.attention-list strong,
+.work-type-field > span,
+.quick-choice-field legend,
+.recommendation-pill span {
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.home-training-summary strong,
+.recommendation-pill strong {
+  overflow-wrap: anywhere;
+  font-size: 0.95rem;
+  line-height: 1.32;
+}
+
+.attention-list {
+  border: 1px solid rgba(215, 181, 109, 0.28);
+  border-radius: 8px;
+  padding: 11px;
+  background: rgba(36, 34, 28, 0.72);
+}
+
+.attention-list p {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.plan-jump-grid button,
+.choice-button {
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: var(--surface-strong);
+  color: var(--text);
+  font-weight: 850;
+}
+
+.choice-button {
+  text-align: left;
+}
+
+.choice-button span,
+.choice-button strong {
+  display: block;
+}
+
+.choice-button span {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.choice-button strong {
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
+.choice-button.is-selected {
+  border-color: rgba(114, 214, 189, 0.66);
+  background: #19382f;
+}
+
+.work-type-field,
+.quick-choice-field {
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.choice-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.data-card-grid {
+  grid-template-columns: 1fr;
+}
+
+.data-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+
+.data-metrics div {
+  min-width: 0;
+  border-radius: 6px;
+  padding: 8px 7px;
+  background: var(--surface-strong);
+}
+
+.data-metrics dt,
+.data-metrics dd {
+  margin: 0;
+}
+
+.data-metrics dt {
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 850;
+}
+
+.data-metrics dd {
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.recommendation-pill.is-up {
+  border-color: rgba(114, 214, 189, 0.55);
+}
+
+.recommendation-pill.is-down {
+  border-color: rgba(238, 155, 114, 0.55);
+}
+
+.plan-jump-grid button:focus-visible,
+.choice-button:focus-visible {
+  outline: 3px solid rgba(114, 214, 189, 0.42);
+  outline-offset: 2px;
+}
+
+@media (min-width: 720px) {
+  .data-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 370px) {
+  .home-training-summary,
+  .quick-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .choice-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
