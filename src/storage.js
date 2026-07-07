@@ -3,6 +3,8 @@ export const STORAGE_KEYS = {
   logDraft: "platformBuddy.logDraft",
   meetMemo: "platformBuddy.meetMemo",
   meetAttemptDraft: "platformBuddy.meetAttemptDraft",
+  meetSettings: "platformBuddy.meetSettings",
+  meetChecklist: "platformBuddy.meetChecklist",
   buddyMethodSettings: "platformBuddy.buddyMethodSettings",
   trainingLogs: "platformBuddy.trainingLogs",
   lifterProfile: "platformBuddy.lifterProfile"
