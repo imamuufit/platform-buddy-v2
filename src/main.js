@@ -2,8 +2,6 @@ import {
   DEFAULT_BUDDY_SETTINGS,
   LIFTS,
   activeLiftIds,
-  accessoryVolumeLabel,
-  experienceLabel,
   formatKg,
   generateBuddyProgram,
   liftLabel,
@@ -11,6 +9,7 @@ import {
 } from "./buddy-method.js";
 import { readJsonStorage, readStorageValue, STORAGE_KEYS, writeJsonStorage, writeStorageValue } from "./storage.js";
 import { bindLifterProfileHome, renderLifterProfileHome } from "./lifter-profile.js";
+import { bindMeetCockpit, renderMeetCockpit } from "./meet-cockpit.js";
 import {
   FATIGUE_LABELS,
   FORM_QUALITY_LABELS,
@@ -129,21 +128,15 @@ function renderData() {
 function renderMeet() {
   const settings = readSettings();
   const program = generateBuddyProgram(settings);
+  const logs = readLogs();
 
-  app.innerHTML = `
-    <section class="hero-panel" aria-labelledby="screen-title">
-      <p class="screen-label">MEET</p>
-      <h2 id="screen-title" class="screen-title">最終週の試技候補</h2>
-      <p class="screen-copy">旧ロジックの最終週MAXチェックを、試技候補の目安として表示します。</p>
-    </section>
-    <section class="attempt-list" aria-label="Attempt suggestions">
-      ${program.lifts.map((lift) => attemptCard(lift, settings, program.projections[lift])).join("")}
-    </section>
-    <section class="buddy-note">
-      <span>Buddy note</span>
-      <p>第一は自己主張ではなく入場券。白を取ってから第二、第三を考えます。</p>
-    </section>
-  `;
+  app.innerHTML = renderMeetCockpit({ settings, program, logs });
+  bindMeetCockpit(app, {
+    settings,
+    program,
+    logs,
+    onRefresh: renderMeet
+  });
 }
 
 function renderSettingsForm(settings) {
@@ -429,23 +422,6 @@ function accessoryRow(item) {
   `;
 }
 
-function attemptCard(lift, settings, projection) {
-  const max = settings.maxes[lift];
-  const openerLow = max * 0.9;
-  const openerHigh = max * 0.93;
-  const secondLow = max * 0.95;
-  const secondHigh = max * 0.98;
-
-  return `
-    <article class="attempt-card">
-      <span>${escapeText(liftLabel(lift))}</span>
-      <strong>第三候補 ${escapeText(projection.label)}</strong>
-      <p>第一 ${rangeText(openerLow, openerHigh)} / 第二 ${rangeText(secondLow, secondHigh)}</p>
-      <small>すべて提案です。第一は確実に白を取る重量を優先。</small>
-    </article>
-  `;
-}
-
 function bindSettingsForm(currentSettings) {
   const form = app.querySelector("[data-settings-form]");
   if (!form) return;
@@ -535,25 +511,6 @@ function maxInput(lift, value) {
   `;
 }
 
-function summaryCard(label, value) {
-  return `
-    <article>
-      <span>${escapeText(label)}</span>
-      <strong>${escapeText(value)}</strong>
-    </article>
-  `;
-}
-
-function metricRow(label, max, projection) {
-  return `
-    <article>
-      <span>${escapeText(label)}</span>
-      <strong>${escapeText(max)}</strong>
-      <p>到達候補 ${escapeText(projection)}</p>
-    </article>
-  `;
-}
-
 function logLine(log) {
   const pieces = [
     log.plan?.week && log.plan?.day ? `Week ${log.plan.week} / Day ${log.plan.day}` : "",
@@ -571,12 +528,6 @@ function diffText(value) {
   if (!value) return "比較待ち";
   const sign = value > 0 ? "+" : "";
   return `${sign}${formatKg(value)}kg`;
-}
-
-function rangeText(low, high) {
-  const min = Math.round(low / 2.5) * 2.5;
-  const max = Math.max(min, Math.round(high / 2.5) * 2.5);
-  return `${formatKg(min)}-${formatKg(max)}kg`;
 }
 
 navItems.forEach((item) => {
