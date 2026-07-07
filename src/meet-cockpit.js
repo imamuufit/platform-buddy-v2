@@ -50,8 +50,10 @@ export function renderMeetCockpit({ settings, program, logs }) {
       </div>
     </section>
     <section class="settings-panel" aria-label="Meet memo">
-      <label class="settings-form"><span>大会メモ</span><textarea data-meet-memo rows="5" maxlength="600">${esc(memo)}</textarea></label>
-      <p class="form-note">検量、アップ、ラック高、セコンド共有事項を短く残します。</p>
+      <div class="settings-form">
+        <label class="meet-memo-field"><span>大会メモ</span><textarea data-meet-memo rows="5" maxlength="600">${esc(memo)}</textarea></label>
+        <p class="form-note">検量、アップ、ラック高、セコンド共有事項を短く残します。</p>
+      </div>
     </section>
     <section class="buddy-note"><span>Buddy note</span><p>第一は自己主張ではなく入場券。白を取ってから勝負。</p></section>
   `;
@@ -65,7 +67,11 @@ export function bindMeetCockpit(app, { onRefresh }) {
     statusText = "大会設定を保存しました。";
     onRefresh();
   });
-  settingsForm?.addEventListener("change", () => writeJsonStorage(STORAGE_KEYS.meetSettings, meetFromForm(settingsForm)));
+  settingsForm?.addEventListener("change", () => {
+    writeJsonStorage(STORAGE_KEYS.meetSettings, meetFromForm(settingsForm));
+    statusText = "大会設定を保存しました。";
+    onRefresh();
+  });
 
   app.querySelectorAll("[data-attempt-form]").forEach((form) => {
     form.addEventListener("input", () => {
@@ -95,9 +101,9 @@ function attemptCard(lift, settings, program, logs, draft) {
       <strong>候補 ${esc(suggestion.opener)} / ${esc(suggestion.second)} / ${esc(suggestion.third)}</strong>
       <p>${esc(suggestion.basis)}</p>
       <form class="settings-form" data-attempt-form="${attr(lift)}">
-        ${attemptInput("opener", "第一", values.opener || suggestion.opener)}
-        ${attemptInput("second", "第二", values.second || suggestion.second)}
-        ${attemptInput("third", "第三", values.third || suggestion.third)}
+        ${attemptInput("opener", "第一", attemptValue(values, "opener", suggestion.opener))}
+        ${attemptInput("second", "第二", attemptValue(values, "second", suggestion.second))}
+        ${attemptInput("third", "第三", attemptValue(values, "third", suggestion.third))}
       </form>
       <small>ドラフトです。当日の検量、アップ、第一成功後の反応で調整してください。</small>
     </article>
@@ -106,6 +112,10 @@ function attemptCard(lift, settings, program, logs, draft) {
 
 function attemptInput(name, label, value) {
   return `<label><span>${esc(label)}</span><input name="${attr(name)}" type="text" inputmode="decimal" value="${attr(value)}" /></label>`;
+}
+
+function attemptValue(values, field, fallback) {
+  return values.savedFields[field] ? values[field] : fallback;
 }
 
 function suggest(lift, settings, program, logs) {
@@ -146,8 +156,29 @@ function attemptDraft() {
 }
 
 function normalizeAttempt(value) {
-  if (typeof value === "string") return { opener: value.slice(0, 20), second: "", third: "" };
-  return { opener: String(value?.opener || "").slice(0, 20), second: String(value?.second || "").slice(0, 20), third: String(value?.third || "").slice(0, 20) };
+  if (typeof value === "string") {
+    return {
+      opener: value.slice(0, 20),
+      second: "",
+      third: "",
+      savedFields: { opener: true, second: false, third: false }
+    };
+  }
+
+  return {
+    opener: String(value?.opener || "").slice(0, 20),
+    second: String(value?.second || "").slice(0, 20),
+    third: String(value?.third || "").slice(0, 20),
+    savedFields: {
+      opener: hasOwn(value, "opener"),
+      second: hasOwn(value, "second"),
+      third: hasOwn(value, "third")
+    }
+  };
+}
+
+function hasOwn(value, key) {
+  return Boolean(value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, key));
 }
 
 function attemptFromForm(form) {
