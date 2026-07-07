@@ -8,6 +8,7 @@ import {
   normalizeBuddySettings
 } from "./buddy-method.js";
 import { readJsonStorage, readStorageValue, STORAGE_KEYS, writeJsonStorage, writeStorageValue } from "./storage.js";
+import { bindBackupRestore, renderBackupRestore } from "./backup-restore.js";
 import { bindLifterProfileHome, renderLifterProfileHome } from "./lifter-profile.js";
 import { bindMeetCockpit, renderMeetCockpit } from "./meet-cockpit.js";
 import {
@@ -114,6 +115,7 @@ function renderData() {
       <p class="screen-copy">複雑なグラフより、直近e1RM、RPE、疲労、フォームから次回の保守的な判断を表示します。</p>
     </section>
     ${renderDataSummary(logs)}
+    ${renderBackupRestore()}
     ${renderLogAnalysis(program, logs)}
     <section class="detail-card">
       <div class="section-heading">
@@ -123,6 +125,8 @@ function renderData() {
       <p>${program.lifts.map((lift) => `${liftLabel(lift)} ${program.projections[lift].label}`).join(" / ")}</p>
     </section>
   `;
+
+  bindBackupRestore(app, { onRefresh: renderData });
 }
 
 function renderMeet() {
